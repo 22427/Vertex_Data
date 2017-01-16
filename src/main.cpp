@@ -6,27 +6,15 @@
 
 
 
-
-//template <typename T>
-//typename std::enable_if<std::is_unsigned<T>::value, bool>::type f(T n)
-//{
-//	return n <= 100;
-//}
-
-//template <typename T>
-//typename std::enable_if<!std::is_unsigned<T>::value, bool>::type f(T n)
-//{
-//	return n >= 0 && n <= 100;
-//}
-
 #include "vd.h"
-int main()
+int main(int argc, char ** argv)
 {
-
-	auto vd = VertexDataTools::readFromFile("test.obj");
+	if(argc < 3)
+		return 0;
+	auto vd = VertexDataTools::readFromFile(argv[1]);
 	if(!vd)
 		printf("error opening file!\n");
 	else
-		VertexDataTools::writeOBJ(vd,stdout);
+		VertexDataTools::writeToFile(vd,argv[2]);
 	return  0;
 };
