@@ -1,0 +1,17 @@
+*.dll
+*.user
+*.sdf
+*.a
+*.so
+*.o
+*.obj
+*.filters
+*.suo
+*.opensdf
+*.swp
+obj/*
+bin/*
+*~
+*.db
+Makefile
+*.stash
