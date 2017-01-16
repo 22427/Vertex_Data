@@ -8,7 +8,7 @@
 
 template<typename T>
 inline typename std::enable_if<std::is_floating_point<T>::value || std::is_class<T>::value, T>::type
-float_to_int(float f)
+float_to_int(float /*f*/)
 {
 	static_assert(true, "Conversion only to integer types!");
 }
@@ -86,7 +86,7 @@ enum Primitive
 	//POLYGON = 0x0009,			// == GL_POLYGON
 };
 
-enum class AttributeID : uint8_t
+enum AttributeID
 {
 	POSITION =0,
 	NORMAL,
@@ -125,134 +125,170 @@ enum TypeID
 class Type
 {
 public:
- TypeID id;
+	TypeID id;
 
-Type(const unsigned int id)
-{
-	this->id = static_cast<TypeID>(id);
-}
-
-Type(const TypeID id = TypeID::INVALID)
-{
-	this->id = id;
-}
-
-operator TypeID() const
-{
-	return  id;
-}
-
-operator unsigned int() const
-{
-	return  static_cast<unsigned int>(id);
-}
-bool is_integer() const
-{
-	return !(id == TypeID::DOUBLE || id == TypeID::FLOAT);
-}
-
-bool is_float() const
-{
-	return (id == TypeID::DOUBLE || id == TypeID::FLOAT);
-}
-
-bool is_signed() const
-{
-	return (id == TypeID::UNSIGNED_BYTE || id == TypeID::UNSIGNED_SHORT|| id == TypeID::UNSIGNED_INT);
-}
-
-bool operator ==(const Type& o)const
-{
-	return  o.id == id;
-}
-
-bool operator ==(const TypeID id)const
-{
-	return  this->id == id;
-}
-
-bool operator !=(const TypeID id)const
-{
-	return  this->id != id;
-}
-
-bool operator !=(const Type& o) const
-{
-	return  o.id != id;
-}
-
-size_t size() const
-{
-	switch (id)
+	Type(const unsigned int id)
 	{
-	case TypeID::BYTE:
-	case TypeID::UNSIGNED_BYTE:
-		return  1;
-	case TypeID::SHORT:
-	case TypeID::UNSIGNED_SHORT:
-		return  2;
-	case TypeID::INT:
-	case TypeID::UNSIGNED_INT:
-	case TypeID::FLOAT:
-		return  4;
-	case TypeID::DOUBLE:
-		return  8;
-	default: static_assert(true,"unknown type!");
+		this->id = static_cast<TypeID>(id);
 	}
-	return  0;
-}
+
+	Type(const TypeID id = TypeID::INVALID)
+	{
+		this->id = id;
+	}
+
+	Type(const std::string& str)
+	{
+		if(str == "float" || str == "FLOAT"|| str == "single")
+			id = FLOAT;
+		else if(str == "double" || str == "DOUBLE")
+			id = DOUBLE;
+		else if(str == "int" || str == "INT")
+			id = INT;
+		else if(str == "uint" || str == "UNSIGNED_INT" || str == "unsigned int" || str == "UNSIGNED INT")
+			id = UNSIGNED_INT;
+
+		else if(str == "short" || str == "SHORT")
+			id = SHORT;
+		else if(str == "ushort" || str == "UNSIGNED_SHORT" || str == "unsigned short" || str == "UNSIGNED SHORT")
+			id = UNSIGNED_SHORT;
+
+		else if(str == "char" || str == "byte"|| str == "BYTE")
+			id = BYTE;
+		else
+			id = UNSIGNED_BYTE;
+
+	}
+
+	operator TypeID() const
+	{
+		return  id;
+	}
+
+
+	operator uint32_t() const
+	{
+		return  static_cast<unsigned int>(id);
+	}
+
+	bool is_integer() const
+	{
+		return !(id == TypeID::DOUBLE || id == TypeID::FLOAT);
+	}
+
+	bool is_float() const
+	{
+		return (id == TypeID::DOUBLE || id == TypeID::FLOAT);
+	}
+
+	bool is_unsigned() const
+	{
+		return (id == TypeID::UNSIGNED_BYTE || id == TypeID::UNSIGNED_SHORT|| id == TypeID::UNSIGNED_INT);
+	}
+
+	bool is_signed() const
+	{
+		return !(id == TypeID::UNSIGNED_BYTE || id == TypeID::UNSIGNED_SHORT|| id == TypeID::UNSIGNED_INT);
+	}
+
+	bool operator ==(const Type& o)const
+	{
+		return  o.id == id;
+	}
+
+	bool operator ==(const TypeID id)const
+	{
+		return  this->id == id;
+	}
+
+	bool operator !=(const TypeID id)const
+	{
+		return  this->id != id;
+	}
+
+	bool operator !=(const Type& o) const
+	{
+		return  o.id != id;
+	}
+
+	size_t size() const
+	{
+		switch (id)
+		{
+		case TypeID::BYTE:
+		case TypeID::UNSIGNED_BYTE:
+			return  1;
+		case TypeID::SHORT:
+		case TypeID::UNSIGNED_SHORT:
+			return  2;
+		case TypeID::INT:
+		case TypeID::UNSIGNED_INT:
+		case TypeID::FLOAT:
+			return  4;
+		case TypeID::DOUBLE:
+			return  8;
+		case INVALID: static_assert(true,"unknown type!");
+		}
+		return  0;
+	}
+
+
+
+	double max() const
+	{
+		switch (id)
+		{
+		case TypeID::BYTE: return std::numeric_limits<int8_t>::max();
+		case TypeID::UNSIGNED_BYTE: return std::numeric_limits<uint8_t>::max();
+		case TypeID::SHORT: return std::numeric_limits<int16_t>::max();
+		case TypeID::UNSIGNED_SHORT: return std::numeric_limits<uint16_t>::max();
+		case TypeID::INT: return std::numeric_limits<int32_t>::max();
+		case TypeID::UNSIGNED_INT: return std::numeric_limits<uint32_t>::max();
+		case TypeID::FLOAT: return static_cast<double>(std::numeric_limits<float>::max());
+		case TypeID::DOUBLE: return std::numeric_limits<double>::max();
+		case INVALID: static_assert(true,"unknown type!");
+		}
+		return  0;
+	}
 };
-
-/*
-inline size_t type_size(const TypeID type)
-{
-	switch (type)
-	{
-	case BYTE:
-	case UNSIGNED_BYTE:
-		return  1;
-	case SHORT:
-	case UNSIGNED_SHORT:
-		return  2;
-	case INT:
-	case UNSIGNED_INT:
-	case FLOAT:
-		return  4;
-	case DOUBLE:
-		return  8;
-	default: static_assert(true,"unknown type!");
-	}
-	return  0;
-}*/
 
 
 class Attribute
 {
 public:
 	AttributeID attribute_id;
-	uint8_t elements;
+	uint32_t elements;
 	Type type;
-
+	uint32_t offset;
 	bool normalized;
 	bool use_constant;
-	uint offset;
-
 	ubyte constant[4*sizeof(uint64_t)];
 
-	uint size() const;
+	short _padding[1];
 
-	Attribute(const Attribute& atr)
+	uint32_t size() const;
+
+	Attribute()
 	{
-		attribute_id = atr.attribute_id;
-		elements = atr.elements;
-		type = atr.type;
-		normalized = atr.normalized;
-		use_constant = atr.use_constant;
-		offset = atr.offset;
-		memcpy(constant,atr.constant,4*sizeof(uint64_t));
-
+		attribute_id = AttributeID::POSITION;
+		elements = 0;
+		type = FLOAT;
+		offset = 0;
+		normalized = false;
+		use_constant = false;
 
 	}
+//	Attribute(const Attribute& atr)
+//	{
+//		attribute_id = atr.attribute_id;
+//		elements = atr.elements;
+//		type = atr.type;
+//		offset = 0;
+//		normalized = atr.normalized;
+//		use_constant = atr.use_constant;
+//		memcpy(constant,atr.constant,4*sizeof(uint64_t));
+//	}
+
 
 	Attribute(const AttributeID id,
 			  const uint elements,
@@ -312,11 +348,6 @@ protected:
 		return r_size;
 	}
 public:
-	~VertexConfiguration()
-	{
-
-	}
-
 	VertexConfiguration()
 		:m_size (0)
 	{
@@ -337,12 +368,12 @@ public:
 		return m_attributes[i];
 	}
 
-	uint32_t attribute_count() const{return m_attributes.size();}
+	uint32_t attribute_count() const{return static_cast<uint32_t>(m_attributes.size());}
 
 	void add_attribute(const Attribute& a)
 	{
 		m_attributes.push_back(a);
-		m_attrib_from_id[a.attribute_id] = (m_attributes.size()-1);
+		m_attrib_from_id[a.attribute_id] = static_cast<uint32_t>(m_attributes.size()-1);
 		m_size = m_minimum_size();
 	}
 
@@ -457,6 +488,7 @@ public:
 					return false;
 			}
 		}
+		return  true;
 	}
 
 	bool operator == (const Vertex& o)const
@@ -557,7 +589,7 @@ public:
 
 
 	Type index_type()const {return  m_index_type;}
-	uint index_count()const{return m_index_count;}
+	uint32_t index_count()const{return m_index_count;}
 	void indices_reserve(const uint c);
 	void indices_null()
 	{
@@ -587,29 +619,34 @@ public:
 
 	uint32_t get_index(const uint32_t i) const
 	{
-		assert(m_index_type.is_integer() && !m_index_type.is_signed());
+		assert(m_index_type.is_integer() && m_index_type.is_unsigned());
 
 		switch (m_index_type.id)
 		{
 		case UNSIGNED_BYTE: return static_cast<uint8_t* >(m_index_data)[i];
 		case UNSIGNED_SHORT:return static_cast<uint16_t*>(m_index_data)[i];
-		case UNSIGNED_INT: return  static_cast<uint32_t*>(m_index_data)[i];
-		default: return 0;
+		case UNSIGNED_INT:  return static_cast<uint32_t*>(m_index_data)[i];
+		case BYTE:case SHORT:case INT: case FLOAT: case DOUBLE: case INVALID:
+			return ~0u;
 		}
-		return  0;
+		return  ~0u;
 	}
 
 
 	void set_index(const uint32_t i, const uint32_t v)
 	{
-		assert(m_index_type.is_integer() && !m_index_type.is_signed());
+		assert(m_index_type.is_integer() && m_index_type.is_unsigned());
 
 		switch (m_index_type.id)
 		{
-		case UNSIGNED_BYTE:  static_cast<uint8_t* >(m_index_data)[i]= v;break;
-		case UNSIGNED_SHORT: static_cast<uint16_t*>(m_index_data)[i] = v;break;
-		case UNSIGNED_INT:  static_cast<uint32_t*>(m_index_data)[i] = v;break;
-		default: break;
+		case UNSIGNED_BYTE:  static_cast<uint8_t* >(m_index_data)[i] =
+					static_cast<uint8_t >(v);break;
+		case UNSIGNED_SHORT: static_cast<uint16_t*>(m_index_data)[i] =
+					static_cast<uint16_t>(v);break;
+		case UNSIGNED_INT:   static_cast<uint32_t*>(m_index_data)[i] =
+					static_cast<uint32_t>(v);break;
+		case BYTE:case SHORT:case INT: case FLOAT: case DOUBLE: case INVALID:
+			break;
 		}
 	}
 
@@ -646,7 +683,7 @@ class VertexDataTools
 {
 protected:
 public:
-	static VertexData* readVD(FILE* f);
+
 	static VertexData* readOBJ(FILE* f);
 	static VertexData* readPLY(FILE* f);
 	static VertexData* readOFF(FILE* f);
@@ -656,7 +693,9 @@ public:
 	static VertexData* readPLY(const void* mem);
 	static VertexData* readOFF(const void* mem);
 
+	static VertexData* readVD(FILE* f);
 	static bool writeVD(const VertexData* vd, FILE* f);
+
 	static bool writeOBJ(const VertexData* vd, FILE* f);
 	static bool writePLY(const VertexData* vd, FILE* f);
 	static bool writeOFF(const VertexData* vd, FILE* f);

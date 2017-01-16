@@ -9,29 +9,20 @@
 #include <glm/gtx/norm.hpp>
 using namespace  glm;
 
-uint Attribute::size() const
+uint32_t Attribute::size() const
 {
 	return  (type.size())*elements;
 }
 
-//AttributeID attibute_id;
-//uint8_t elements;
-//TypeID type;
 
-//bool normalized;
-//bool use_constant;
-//uint offset;
-
-//ubyte* conststant[4*sizeof(uint64_t)];
-
-
-Attribute::Attribute(const AttributeID id, const uint elements, const Type type, const bool normalized, bool use_constant, const void* conststant)
+Attribute::Attribute(const AttributeID id, const uint32_t elements, const Type type, const bool normalized, bool use_constant, const void* conststant)
 	:attribute_id(id),
 	  elements(elements),
 	  type(type),
+	  offset(0),
 	  normalized(normalized),
-	  use_constant(use_constant),
-	  offset(0)
+	  use_constant(use_constant)
+
 {
 	if(use_constant)
 	{
@@ -45,57 +36,57 @@ bool Attribute::read(const void *zero, vec4 &res) const
 {
 	res = vec4(0.0f,0.0f,0.0f,1.0f);
 	zero = reinterpret_cast<const ubyte*>(zero)+ offset;
-
+	const int elems = static_cast<int>(elements);
 	if(type == BYTE)
 	{
 		const byte* v = reinterpret_cast<const byte*>(zero);
-		for(uint i = 0 ; i< elements;i++)
+		for(int i = 0 ; i<elems;i++)
 			res[i] = normalized? int_to_float(v[i]): v[i];
 	}
 	else if( type == UNSIGNED_BYTE )
 	{
 		const ubyte* v = reinterpret_cast<const ubyte*>(zero) + offset;
-		for(uint i = 0 ; i< elements;i++)
+		for(int i = 0 ; i<elems;i++)
 			res[i] = normalized? int_to_float(v[i]): v[i];
 	}
 
 	else if(type == SHORT)
 	{
 		const int16_t* v = reinterpret_cast<const int16_t*>(zero);
-		for(uint i = 0 ; i< elements;i++)
+		for(int i = 0 ; i<elems;i++)
 			res[i] = normalized? int_to_float(v[i]): v[i];
 	}
 	else if(type == UNSIGNED_SHORT )
 	{
 		const uint16_t* v = reinterpret_cast<const uint16_t*>(zero);
-		for(uint i = 0 ; i< elements;i++)
+		for(int i = 0 ; i<elems;i++)
 			res[i] = normalized? int_to_float(v[i]): v[i];
 	}
 
 	else if(type == INT)
 	{
 		const int32_t* v = reinterpret_cast<const int32_t*>(zero);
-		for(uint i = 0 ; i< elements;i++)
+		for(int i = 0 ; i<elems;i++)
 			res[i] = normalized? int_to_float(v[i]): v[i];
 	}
 	else if( type == UNSIGNED_INT )
 	{
 		const uint32_t* v = reinterpret_cast<const uint32_t*>(zero);
-		for(uint i = 0 ; i< elements;i++)
+		for(int i = 0 ; i<elems;i++)
 			res[i] = normalized? int_to_float(v[i]): v[i];
 	}
 
 	else if(type == FLOAT)
 	{
 		const float* v = reinterpret_cast<const float*>(zero);
-		for(uint i = 0 ; i< elements;i++)
+		for(int i = 0 ; i<elems;i++)
 			res[i] = v[i];
 	}
 
 	else if(type == DOUBLE)
 	{
 		const double* v = reinterpret_cast<const double*>(zero);
-		for(uint i = 0 ; i< elements;i++)
+		for(int i = 0 ; i<elems;i++)
 			res[i] = static_cast<float>(v[i]);
 	}
 	else
@@ -108,57 +99,57 @@ bool Attribute::read(const void *zero, vec3 &res) const
 {
 	res = vec3(0.0f,0.0f,0.0f);
 	zero = reinterpret_cast<const ubyte*>(zero)+ offset;
-
+	const int elems = static_cast<int>(elements);
 	if(type == BYTE)
 	{
 		const byte* v = reinterpret_cast<const byte*>(zero);
-		for(uint i = 0 ; i< elements && i<3;i++)
+		for(int i = 0 ; i<elems && i<3;i++)
 			res[i] = normalized? int_to_float(v[i]): v[i];
 	}
 	else if(type == UNSIGNED_BYTE )
 	{
 		const ubyte* v = reinterpret_cast<const ubyte*>(zero) + offset;
-		for(uint i = 0 ; i< elements && i<3;i++)
+		for(int i = 0 ; i<elems && i<3;i++)
 			res[i] = normalized? int_to_float(v[i]): v[i];
 	}
 
 	else if(type == SHORT)
 	{
 		const int16_t* v = reinterpret_cast<const int16_t*>(zero);
-		for(uint i = 0 ; i< elements && i<3;i++)
+		for(int i = 0 ; i<elems && i<3;i++)
 			res[i] = normalized? int_to_float(v[i]): v[i];
 	}
 	else if(type == UNSIGNED_SHORT )
 	{
 		const uint16_t* v = reinterpret_cast<const uint16_t*>(zero);
-		for(uint i = 0 ; i< elements && i<3;i++)
+		for(int i = 0 ; i<elems && i<3;i++)
 			res[i] = normalized? int_to_float(v[i]): v[i];
 	}
 
 	else if(type == INT)
 	{
 		const int32_t* v = reinterpret_cast<const int32_t*>(zero);
-		for(uint i = 0 ; i< elements && i<3;i++)
+		for(int i = 0 ; i<elems && i<3;i++)
 			res[i] = normalized? int_to_float(v[i]): v[i];
 	}
 	else if(type == UNSIGNED_INT )
 	{
 		const uint32_t* v = reinterpret_cast<const uint32_t*>(zero);
-		for(uint i = 0 ; i< elements && i<3;i++)
+		for(int i = 0 ; i<elems && i<3;i++)
 			res[i] = normalized? int_to_float(v[i]): v[i];
 	}
 
 	else if(type == FLOAT)
 	{
 		const float* v = reinterpret_cast<const float*>(zero);
-		for(uint i = 0 ; i< elements && i<3;i++)
+		for(int i = 0 ; i<elems && i<3;i++)
 			res[i] = v[i];
 	}
 
 	else if(type == DOUBLE)
 	{
 		const double* v = reinterpret_cast<const double*>(zero);
-		for(uint i = 0 ; i< elements && i<3;i++)
+		for(int i = 0 ; i<elems && i<3;i++)
 			res[i] = static_cast<float>(v[i]);
 	}
 	else
@@ -171,57 +162,57 @@ bool Attribute::read(const void *zero, vec2 &res) const
 {
 	res = vec2(0.0f,0.0f);
 	zero = reinterpret_cast<const ubyte*>(zero)+ offset;
-
+	const int elems = static_cast<int>(elements);
 	if(type == BYTE)
 	{
 		const byte* v = reinterpret_cast<const byte*>(zero);
-		for(uint i = 0 ; i< elements && i<2;i++)
+		for(int i = 0 ; i<elems && i<2;i++)
 			res[i] = normalized? int_to_float(v[i]): v[i];
 	}
 	else if(type == UNSIGNED_BYTE )
 	{
 		const ubyte* v = reinterpret_cast<const ubyte*>(zero);
-		for(uint i = 0 ; i< elements && i<2;i++)
+		for(int i = 0 ; i<elems && i<2;i++)
 			res[i] = normalized? int_to_float(v[i]): v[i];
 	}
 
 	else if(type == SHORT)
 	{
 		const int16_t* v = reinterpret_cast<const int16_t*>(zero);
-		for(uint i = 0 ; i< elements && i<2;i++)
+		for(int i = 0 ; i<elems && i<2;i++)
 			res[i] = normalized? int_to_float(v[i]): v[i];
 	}
 	else if(type == UNSIGNED_SHORT )
 	{
 		const uint16_t* v = reinterpret_cast<const uint16_t*>(zero);
-		for(uint i = 0 ; i< elements && i<2;i++)
+		for(int i = 0 ; i<elems && i<2;i++)
 			res[i] = normalized? int_to_float(v[i]): v[i];
 	}
 
 	else if(type == INT)
 	{
 		const int32_t* v = static_cast<const int32_t*>(zero);
-		for(uint i = 0 ; i< elements && i<2;i++)
+		for(int i = 0 ; i<elems && i<2;i++)
 			res[i] = normalized? int_to_float(v[i]): v[i];
 	}
 	else if(type == UNSIGNED_INT )
 	{
 		const uint32_t* v = static_cast<const uint32_t*>(zero);
-		for(uint i = 0 ; i< elements && i<2;i++)
+		for(int i = 0 ; i<elems && i<2;i++)
 			res[i] = normalized? int_to_float(v[i]): v[i];
 	}
 
 	else if(type == FLOAT)
 	{
 		const float* v = static_cast<const float*>(zero);
-		for(uint i = 0 ; i< elements && i<2;i++)
+		for(int i = 0 ; i<elems && i<2;i++)
 			res[i] = v[i];
 	}
 
 	else if(type == DOUBLE)
 	{
 		const double* v = static_cast<const double*>(zero);
-		for(uint i = 0 ; i< elements && i<2;i++)
+		for(int i = 0 ; i<elems && i<2;i++)
 			res[i] = static_cast<float>(v[i]);
 	}
 	else
@@ -289,56 +280,56 @@ bool Attribute::read(const void *zero, float &res) const
 bool Attribute::write(void *zero, const vec4 &v) const
 {
 	zero = static_cast<ubyte*>(zero)+ offset;
-
+	const int elems = static_cast<int>(elements);
 	if(type == BYTE)
 	{
 		int8_t* z = static_cast<int8_t*>(zero);
-		for(uint i = 0 ; i< elements;i++)
+		for(int i = 0 ; i<elems;i++)
 			z[i] = static_cast<int8_t>(normalized? float_to_int<int8_t>(v[i]) : v[i]);
 	}
 	else if(type == UNSIGNED_BYTE )
 	{
 		uint8_t* z = static_cast<uint8_t*>(zero);
-		for(uint i = 0 ; i< elements;i++)
+		for(int i = 0 ; i<elems;i++)
 			z[i] = static_cast<uint8_t>(normalized? float_to_int<uint8_t>(v[i]): v[i]);
 	}
 
 	else if(type == SHORT)
 	{
 		int16_t* z = static_cast<int16_t*>(zero);
-		for(uint i = 0 ; i< elements;i++)
+		for(int i = 0 ; i<elems;i++)
 			z[i] = static_cast<int16_t>(normalized? float_to_int<int16_t>(v[i]) : v[i]);
 	}
 	else if(type == UNSIGNED_SHORT )
 	{
 		uint16_t* z = static_cast<uint16_t*>(zero);
-		for(uint i = 0 ; i< elements;i++)
+		for(int i = 0 ; i<elems;i++)
 			z[i] = static_cast<uint16_t>(normalized? float_to_int<uint16_t>(v[i]) : v[i]);
 	}
 
 	else if(type == INT)
 	{
 		int32_t* z = static_cast<int32_t*>(zero);
-		for(uint i = 0 ; i< elements;i++)
+		for(int i = 0 ; i<elems;i++)
 			z[i] = static_cast<int32_t>(normalized? float_to_int<int32_t>(v[i]) : v[i]);
 	}
 	else if(type == UNSIGNED_INT )
 	{
 		uint32_t* z = static_cast<uint32_t*>(zero);
-		for(uint i = 0 ; i< elements;i++)
+		for(int i = 0 ; i<elems;i++)
 			z[i] = static_cast<uint32_t>(normalized? float_to_int<uint32_t>(v[i]) : v[i]);
 	}
 
 	else if(type == FLOAT)
 	{
 		float* z = static_cast<float*>(zero);
-		for(uint i = 0 ; i< elements;i++)
+		for(int i = 0 ; i<elems;i++)
 			z[i] =  v[i];
 	}
 	else if(type == DOUBLE )
 	{
 		double* z = static_cast<double*>(zero);
-		for(uint i = 0 ; i< elements;i++)
+		for(int i = 0 ; i<elems;i++)
 			z[i] = static_cast<double>(v[i]);
 	}
 	else
@@ -350,56 +341,56 @@ bool Attribute::write(void *zero, const vec4 &v) const
 bool Attribute::write(void *zero, const vec3 &v) const
 {
 	zero = static_cast<ubyte*>(zero)+ offset;
-
+	const int elems = static_cast<int>(elements);
 	if(type == BYTE)
 	{
 		int8_t* z = static_cast<int8_t*>(zero);
-		for(uint i = 0 ; i< elements && i<3;i++)
+		for(int i = 0 ; i<elems && i<3;i++)
 			z[i] = static_cast<int8_t>(normalized? float_to_int<int8_t>(v[i]) : v[i]);
 	}
 	else if(type == UNSIGNED_BYTE )
 	{
 		uint8_t* z = static_cast<uint8_t*>(zero);
-		for(uint i = 0 ; i< elements && i<3;i++)
+		for(int i = 0 ; i<elems && i<3;i++)
 			z[i] = static_cast<uint8_t>(normalized? float_to_int<uint8_t>(v[i]): v[i]);
 	}
 
 	else if(type == SHORT)
 	{
 		int16_t* z = static_cast<int16_t*>(zero);
-		for(uint i = 0 ; i< elements && i<3;i++)
+		for(int i = 0 ; i<elems && i<3;i++)
 			z[i] = static_cast<int16_t>(normalized? float_to_int<int16_t>(v[i]) : v[i]);
 	}
 	else if(type == UNSIGNED_SHORT )
 	{
 		uint16_t* z = static_cast<uint16_t*>(zero);
-		for(uint i = 0 ; i< elements && i<3;i++)
+		for(int i = 0 ; i<elems && i<3;i++)
 			z[i] = static_cast<uint16_t>(normalized? float_to_int<uint16_t>(v[i]) : v[i]);
 	}
 
 	else if(type == INT)
 	{
 		int32_t* z = static_cast<int32_t*>(zero);
-		for(uint i = 0 ; i< elements && i<3;i++)
+		for(int i = 0 ; i<elems && i<3;i++)
 			z[i] = static_cast<int32_t>(normalized? float_to_int<int32_t>(v[i]) : v[i]);
 	}
 	else if(type == UNSIGNED_INT )
 	{
 		uint32_t* z = static_cast<uint32_t*>(zero);
-		for(uint i = 0 ; i< elements && i<3;i++)
+		for(int i = 0 ; i<elems && i<3;i++)
 			z[i] = static_cast<uint32_t>(normalized? float_to_int<uint32_t>(v[i]) : v[i]);
 	}
 
 	else if(type == FLOAT)
 	{
 		float* z = static_cast<float*>(zero);
-		for(uint i = 0 ; i< elements && i<3;i++)
+		for(int i = 0 ; i<elems && i<3;i++)
 			z[i] =  v[i];
 	}
 	else if(type == DOUBLE )
 	{
 		double* z = static_cast<double*>(zero);
-		for(uint i = 0 ; i< elements && i<3;i++)
+		for(int i = 0 ; i<elems && i<3;i++)
 			z[i] = static_cast<double>(v[i]);
 	}
 	else
@@ -411,56 +402,56 @@ bool Attribute::write(void *zero, const vec3 &v) const
 bool Attribute::write(void *zero, const vec2 &v) const
 {
 	zero = static_cast<ubyte*>(zero)+ offset;
-
+	const int elems = static_cast<int>(elements);
 	if(type == BYTE)
 	{
 		int8_t* z = static_cast<int8_t*>(zero);
-		for(uint i = 0 ; i< elements && i<2;i++)
+		for(int i = 0 ; i<elems && i<2;i++)
 			z[i] = static_cast<int8_t>(normalized? float_to_int<int8_t>(v[i]) : v[i]);
 	}
 	else if(type == UNSIGNED_BYTE )
 	{
 		uint8_t* z = static_cast<uint8_t*>(zero);
-		for(uint i = 0 ; i< elements && i<2;i++)
+		for(int i = 0 ; i<elems && i<2;i++)
 			z[i] = static_cast<uint8_t>(normalized? float_to_int<uint8_t>(v[i]): v[i]);
 	}
 
 	else if(type == SHORT)
 	{
 		int16_t* z = static_cast<int16_t*>(zero);
-		for(uint i = 0 ; i< elements && i<2;i++)
+		for(int i = 0 ; i<elems && i<2;i++)
 			z[i] = static_cast<int16_t>(normalized? float_to_int<int16_t>(v[i]) : v[i]);
 	}
 	else if(type == UNSIGNED_SHORT )
 	{
 		uint16_t* z = static_cast<uint16_t*>(zero);
-		for(uint i = 0 ; i< elements && i<2;i++)
+		for(int i = 0 ; i<elems && i<2;i++)
 			z[i] = static_cast<uint16_t>(normalized? float_to_int<uint16_t>(v[i]) : v[i]);
 	}
 
 	else if(type == INT)
 	{
 		int32_t* z = static_cast<int32_t*>(zero);
-		for(uint i = 0 ; i< elements && i<2;i++)
+		for(int i = 0 ; i<elems && i<2;i++)
 			z[i] = static_cast<int32_t>(normalized? float_to_int<int32_t>(v[i]) : v[i]);
 	}
 	else if(type == UNSIGNED_INT )
 	{
 		uint32_t* z = static_cast<uint32_t*>(zero);
-		for(uint i = 0 ; i< elements && i<2;i++)
+		for(int i = 0 ; i<elems && i<2;i++)
 			z[i] = static_cast<uint32_t>(normalized? float_to_int<uint32_t>(v[i]) : v[i]);
 	}
 
 	else if(type == FLOAT)
 	{
 		float* z = static_cast<float*>(zero);
-		for(uint i = 0 ; i< elements && i<2;i++)
+		for(int i = 0 ; i<elems && i<2;i++)
 			z[i] =  v[i];
 	}
 	else if(type == DOUBLE )
 	{
 		double* z = static_cast<double*>(zero);
-		for(uint i = 0 ; i< elements && i<2;i++)
+		for(int i = 0 ; i<elems && i<2;i++)
 			z[i] = static_cast<double>(v[i]);
 	}
 	else
@@ -609,20 +600,6 @@ bool Vertex::setAttribute(const AttributeID id, const float v) const
 }
 
 
-//Primitive m_render_primitive;
-//Type m_index_type;
-
-//uint m_index_count;
-//uint m_index_reserve;
-//void* m_index_data;
-
-//VertexConfiguration m_cfg;
-//void* m_vertex_data;
-//uint m_vertex_count;
-//uint m_vertex_reserve;
-
-
-
 VertexData::VertexData(Primitive primitive,
 					   VertexConfiguration cfg,
 					   const uint res_vtx,
@@ -631,21 +608,20 @@ VertexData::VertexData(Primitive primitive,
 	:
 	  m_render_primitive(primitive),
 	  m_index_type(index_type),
-
 	  m_index_count(0u),
-	  m_index_reserve(res_idx),
+	  m_index_reserve(0u),
 	  m_index_data(nullptr),
-
 	  m_cfg(cfg),
 	  m_vertex_data(nullptr),
 	  m_vertex_count(0u),
-	  m_vertex_reserve(res_vtx)
+	  m_vertex_reserve(0u)
 {
-	if(m_vertex_reserve)
-		vertices_reserve(m_vertex_reserve);
+	if(res_vtx)
+		vertices_reserve(res_vtx);
 
-	if(m_index_reserve)
-		indices_reserve(m_vertex_reserve);
+
+	if(res_idx)
+		indices_reserve(res_idx);
 
 }
 
@@ -701,10 +677,11 @@ void VertexData::push_back(const uint32_t &i)
 
 	switch (m_index_type.id)
 	{
-	case UNSIGNED_BYTE: static_cast<uint8_t*>(m_index_data)[m_index_count] = i;break;
-	case UNSIGNED_SHORT: static_cast<uint16_t*>(m_index_data)[m_index_count] = i;break;
-	case UNSIGNED_INT: static_cast<uint32_t*>(m_index_data)[m_index_count] = i;break;
-	default: static_assert(true, "invalid index type!!!");
+	case UNSIGNED_BYTE: static_cast<uint8_t*>(m_index_data)[m_index_count] = static_cast<uint8_t>(i);break;
+	case UNSIGNED_SHORT: static_cast<uint16_t*>(m_index_data)[m_index_count] = static_cast<uint16_t>(i);break;
+	case UNSIGNED_INT: static_cast<uint32_t*>(m_index_data)[m_index_count] = static_cast<uint32_t>(i);break;
+	case BYTE:case SHORT:case INT: case FLOAT: case DOUBLE: case INVALID:
+		static_assert(true, "invalid index type!!!");
 	}
 
 	m_index_count++;
@@ -736,27 +713,6 @@ void VertexData::set_primitive(const Primitive &p){m_render_primitive = p;}
 
 
 
-VertexData *VertexDataTools::readVD(FILE* /*f*/)
-{
-
-	//	uint32_t first_line[5];
-	//	uint32_t last_line[5];
-	//	fread(first_line,5,4,f);
-
-	//	for(unsigned int i = 0; i<first_line[3]+1;i++)
-	//		fread(last_line,5,4,f);
-
-	//	vd->data().resize(last_line[0]);
-	//	vd->indices().resize(last_line[2]);
-
-	//	fread(vd->data().data(),last_line[1],1,f);
-	//	fread(vd->indices().data(),last_line[3],1,f);
-	//	fclose(f);
-	//	return vd;
-	return nullptr;
-}
-
-
 
 void handle_v(VertexData* vd, std::map<Vertex,uint32_t>& v_loc, const Vertex& v)
 {
@@ -767,7 +723,7 @@ void handle_v(VertexData* vd, std::map<Vertex,uint32_t>& v_loc, const Vertex& v)
 	}
 	else
 	{
-		v_id =  static_cast<int>(vd->push_back(v));
+		v_id =  static_cast<uint32_t>(vd->push_back(v));
 		v_loc[v] = v_id;
 	}
 	vd->push_back(static_cast<const uint32_t>(v_id));
@@ -798,13 +754,13 @@ VertexData *VertexDataTools::readOBJ(FILE* f)
 	Tokenizer ltkn(nullptr);
 	Tokenizer tkn(nullptr);
 	VertexConfiguration cfg;
-	VertexData* vd;
+	VertexData* vd = nullptr;
 	bool configurated = false;
 
 	uint  p_id = 0;
 	uint  t_id = 0;
 	uint  n_id = 0;
-	void* line_sav;
+	void* line_sav = nullptr;
 
 	while (getline(&line,&cnt,f) != -1)
 	{
@@ -864,7 +820,6 @@ VertexData *VertexDataTools::readOBJ(FILE* f)
 			}
 
 			Vertex v(cfg,nullptr);
-
 
 			if (arg[3])
 			{
@@ -933,13 +888,108 @@ VertexData *VertexDataTools::readOBJ(FILE* f)
 		ltkn.setBase(nullptr);
 	}
 	tkn.setBase(nullptr);
-	free(line_sav);
+	if(line_sav)
+		free(line_sav);
 
-
-
-	/*if (normals.empty())
-		   calculateNormals();*/
 	return vd;
+}
+
+VertexData *VertexDataTools::readVD(FILE *f)
+{
+	if(!f)
+		return nullptr;
+
+	union bd
+	{
+		uint32_t i;
+		char n[4];
+	};
+
+	bd name;
+	name.n[0] = ':';
+	name.n[1] = 'V';
+	name.n[2] = 'D';
+	name.n[3] = ':';
+
+	bd atr;
+	atr.n[0] = 'a';
+	atr.n[1] = 't';
+	atr.n[2] = 'r';
+	atr.n[3] = ':';
+
+
+	bd vtx;
+	vtx.n[0] = 'v';
+	vtx.n[1] = 't';
+	vtx.n[2] = 'x';
+	vtx.n[3] = ':';
+
+	bd idx;
+	idx.n[0] = 'i';
+	idx.n[1] = 'd';
+	idx.n[2] = 'x';
+	idx.n[3] = ':';
+
+
+
+	uint32_t r[16];
+	fread(&r,16,1,f);
+
+	if(r[0] != name.i) // check the magic number
+		return nullptr;
+	if(r[2] != 0xffff) // check for endianness
+	{
+		printf("endianness not implemented yet!\n");
+		return nullptr;
+	}
+	if(r[3] != 1) // check version. we only know version 1 so that should do!
+		return  nullptr;
+
+	fread(&r,20,1,f);
+	Primitive primitive = static_cast<Primitive>(r[0]);
+	Type index_type = r[1];
+	uint32_t index_count = r[2];
+	uint32_t attribute_count = r[3];
+	uint32_t vertex_count = r[4];
+
+	fread(r,8,1,f); // read "atr:" constant and the size of the attribute information
+	if(r[0] != atr.i)
+		return  nullptr;
+	VertexConfiguration cfg;
+	for(uint32_t i = 0 ; i<attribute_count;i++)
+	{
+		Attribute a;
+		fread(r,14*4,1,f);
+		a.attribute_id = static_cast<AttributeID>(r[0]);
+		a.elements = static_cast<uint8_t>(r[1]);
+		a.type = r[2];
+		a.normalized = r[3] != 0;
+		a.use_constant = r[4] != 0;
+		a.offset= r[5];
+		memcpy(a.constant,&r[6],32);
+		cfg.add_attribute(a);
+	}
+
+
+	VertexData* res = new VertexData(primitive,cfg,vertex_count,index_type,index_count);
+	res->m_index_count = index_count;
+	res->m_vertex_count = vertex_count;
+
+
+	fread(r,8,1,f); // read "vtx:" constant and the size of the attribute information
+	if(r[0] != vtx.i)
+		return  nullptr;
+	fread(res->m_vertex_data,r[1],1,f);
+
+	fread(r,8,1,f); // read "idx:" constant and the size of the attribute information
+	if(r[0] != idx.i)
+		return  nullptr;
+	fread(res->m_index_data,r[1],1,f);
+
+	return  res;
+
+
+
 }
 
 bool VertexDataTools::writeVD(const VertexData *vd, FILE *f)
@@ -1009,7 +1059,7 @@ bool VertexDataTools::writeVD(const VertexData *vd, FILE *f)
 	buffer[0].n[1] = 'd';
 	buffer[0].n[2] = 'x';
 	buffer[0].n[3] = ':';
-	buffer[1].i = vd->index_count()*vd->index_type().size();
+	buffer[1].i = static_cast<uint32_t>(vd->index_count()*vd->index_type().size());
 	fwrite(buffer,2*4,1,f);
 
 	fwrite(vd->m_index_data,buffer[1].i,1,f);
@@ -1018,55 +1068,44 @@ bool VertexDataTools::writeVD(const VertexData *vd, FILE *f)
 
 
 
-#if 0
-enum PLY_DATA_TYPE
+
+
+VertexData *VertexDataTools::readPLY(FILE* f)
 {
-	plyFLOAT,
-	plyDOUBLE,
-	plyUINT,
-	plyINT,
-	plyUSHORT,
-	plySHORT,
-	plyUCHAR,
-	plyCHAR,
 
-};
-
-VertexData *VertexDataTools::readPLY(const std::string &path)
-{
-	std::ifstream fstream(path.c_str());
-
-	if (!fstream.is_open())
+	if (!f)
 		return nullptr;
-	VertexData* vd = new VertexData();
 
-	std::string line;
-
-	Tokenizer tkn("");
+	Tokenizer tkn(nullptr);
 	//get the headers information
-	int vertex_count = 0;
-	int face_count = 0;
-
+	uint32_t vertex_count = 0;
+	uint32_t face_count = 0;
+	Type index_type = UNSIGNED_INT;
 	std::vector<std::string> properties;
-	std::vector<PLY_DATA_TYPE> prop_types;
+	std::vector<Type> prop_types;
 
 	bool vertex_prop = false;
-
-	while (std::getline(fstream, line))
+	bool face_prop = false;
+	size_t n = 0;
+	char* line = nullptr;
+	while (getline(&line,&n,f) >= 0)
 	{
-		tkn.reset(line);
-		std::string op = tkn.getToken(' ');
+		tkn.setBase(line);
+		std::string op = tkn.getToken();
 		if (op == "element")
 		{
-			std::string s = tkn.getToken(' ');
+			std::string s = tkn.getToken();
 			if (s == "vertex")
 			{
 				vertex_prop = true;
-				vertex_count = atoi(tkn.getRest());
+				face_prop = false;
+				tkn.getTokenAs(vertex_count,tkn.whitespaces);
+
 			}
 			else if (s == "face")
 			{
-				face_count = atoi(tkn.getRest());
+				tkn.getTokenAs(face_count,tkn.whitespaces);
+				face_prop = true;
 				vertex_prop = false;
 			}
 			else
@@ -1076,89 +1115,156 @@ VertexData *VertexDataTools::readPLY(const std::string &path)
 		}
 		else if (op == "property" && vertex_prop)
 		{
-			std::string type = tkn.getToken(' ');
-			std::string name = tkn.getToken(' ');
-
-			PLY_DATA_TYPE dt = plyFLOAT;
-			if (type == "float") dt = plyFLOAT;
-			else if (type == "double") dt = plyDOUBLE;
-			else if (type == "uint") dt = plyUINT;
-			else if (type == "int") dt = plyINT;
-			else if (type == "ushort") dt = plyUSHORT;
-			else if (type == "short") dt = plySHORT;
-			else if (type == "uchar") dt = plyUCHAR;
-			else if (type == "char") dt = plyCHAR;
+			std::string type = tkn.getToken();
+			std::string name = tkn.getToken();
+			Type dt = type;
 			properties.push_back(name);
 			prop_types.push_back( dt);
+		}
+		else if (op == "property" && face_prop)
+		{
+			std::string	res;
+			tkn.getToken();//list
+			tkn.getToken();// list length
+			res = tkn.getToken();// type of list data!
+			trim(res);
+			index_type = res;
 		}
 		else if (op == "end_header")
 		{
 			break;
 		}
+	}
+	VertexConfiguration cfg;
 
+	class prop_sc
+	{
+	public:
+		prop_sc(AttributeID a,
+				int32_t c,
+				Type t,
+				bool n):a(a),c(c),t(t),n(n){}
+		AttributeID a;
+		int32_t c;
+		Type t;
+		int n;
+	};
+	std::vector<prop_sc> psc;
+
+	uint32_t i = 0 ;
+
+
+	Attribute aa[UDEF_0];
+	for(uint32_t i= 0 ; i< UDEF_0;i++)
+	{
+		aa[i].type = INVALID;
+		aa[i].attribute_id = static_cast<AttributeID>(i);
 	}
 
+
+	for(const auto&p : properties)
+	{
+		Attribute* a = nullptr;
+		if((p[0] == 'x' ||p[0] == 'y' ||p[0] == 'z' ))
+			a= &(aa[POSITION]);
+		else if(p[0] == 'r'||p[0] == 'g'||p[0] == 'b'||p[0] == 'a')
+			a= &(aa[COLOR]);
+		else if((p[0] == 'n'))
+			a= &(aa[NORMAL]);
+		else if(p[0] == 's'||p[0] == 't'||p[0] == 'p')
+			a= &(aa[TEXCOORD]);
+
+		if(p[0] == 'x' || p[0] == 'r' || p[1] == 'x' || p[0] == 's')
+			a->elements = 1;
+		if(p[0] == 'y' || p[0] == 'g'|| p[1] == 'y' || p[0] == 't')
+			a->elements = 2;
+		if(p[0] == 'z' || p[0] == 'b'|| p[1] == 'z' || p[0] == 'p')
+			a->elements = 3;
+		if(p[0] == 'w' || p[0] == 'a'|| p[1] == 'w' || p[0] == 'q')
+			a->elements = 4;
+
+		a->use_constant = false;
+		a->type =  prop_types.at(i);
+		a->normalized = a->type.is_integer();
+		prop_sc ppp(a->attribute_id,static_cast<int>(a->elements)-1,a->type,a->normalized);
+		psc.push_back(ppp);
+
+		i++;
+	}
+	for(uint32_t i= 0 ; i< UDEF_0;i++)
+	{
+		if(aa[i].type != INVALID)
+			cfg.add_attribute(aa[i]);
+	}
+
+
+	VertexData* vd = new VertexData(TRIANGLES,cfg,vertex_count,index_type,face_count*3);
 	// now read the vertex data
 
+	Vertex vtx(cfg,nullptr);
 
-	Vertex vtx;
-
-	for (int i = 0; i < vertex_count; i++)
+	for (uint32_t i = 0; i < vertex_count; i++)
 	{
-		std::getline(fstream, line);
-		tkn.reset(line);
-		for (unsigned int j = 0; j < properties.size(); j++)
+		getline(&line,&n,f);
+		tkn.setBase(line);
+		vec4 pos;
+		vec4 nrm;
+		vec4 clr;
+		vec4 tex;
+
+		float* r = nullptr;
+		for (const auto& p: psc)
 		{
-			const auto& prp = properties[j];
-			const auto& typ = prop_types[j];
-
-			float val = static_cast<float>(atof(tkn.getToken(' ')));
-
-			if (typ == plyUCHAR)
-				val /= 255.0f;
-
-			if (prp[0] == 'x') vtx.pos()[0] = (val);
-			else if (prp[0] == 'y') vtx.pos()[1] = (val);
-			else if (prp[0] == 'z') vtx.pos()[2] = (val);
-			else if (prp[0] == 's') vtx.tex()[0] = (val);
-			else if (prp[0] == 't') vtx.tex()[1] = (val);
-			else if (prp[0] == 'r') vtx.clr()[0] = (val);
-			else if (prp[0] == 'g') vtx.clr()[1] = (val);
-			else if (prp[0] == 'b') vtx.clr()[2] = (val);
-			else if (prp[0] == 'n')
+			switch (p.a)
 			{
-				if( prp[1] == 'x') vtx.nrm()[0] = (val);
-				else if (prp[1] == 'y') vtx.nrm()[1] = (val);
-				else if (prp[1] == 'z') vtx.nrm()[2] = (val);
+				case POSITION: r = &pos[p.c]; break;
+				case NORMAL: r = &nrm[p.c]; break;
+				case COLOR: r = &clr[p.c]; break;
+				case TEXCOORD: r = &tex[p.c]; break;
+				default: continue;
 			}
 
+			tkn.getTokenAs(*r,tkn.whitespaces);
+
+			if(p.n)
+				*r= static_cast<float>(static_cast<double>(*r)/p.t.max());
 		}
+
+		vtx.setAttribute(POSITION,pos);
+		vtx.setAttribute(NORMAL,nrm);
+		vtx.setAttribute(COLOR,clr);
+		vtx.setAttribute(TEXCOORD,tex);
 		vd->push_back(vtx);
 	}
 	// read the faces
 
-	for (int i = 0; i < face_count; i++)
+	for (uint32_t i = 0; i < face_count; i++)
 	{
-		std::getline(fstream, line);
-		tkn.reset(line);
-		auto verts_in_this_face = atoi(tkn.getToken(' '));
+		getline(&line,&n,f);
+		tkn.setBase(line);
+		auto verts_in_this_face = atoi(tkn.getToken());
 
-		uint32_t vert0 = static_cast<uint32_t>(atoi(tkn.getToken(' ')));
-		uint32_t vert1 = static_cast<uint32_t>(atoi(tkn.getToken(' ')));
-
+		uint32_t vert0;
+		uint32_t vert1;
+		uint32_t vert2;
+		tkn.getTokenAs(vert0,tkn.whitespaces);
+		tkn.getTokenAs(vert1,tkn.whitespaces);
 		for (int i = 2; i < verts_in_this_face; i+=1)
 		{
-			uint32_t vert2 = static_cast<uint32_t>(atoi(tkn.getToken(' ')));
+			tkn.getTokenAs(vert2,tkn.whitespaces);
 			vd->push_back(vert0);
 			vd->push_back(vert1);
 			vd->push_back(vert2);
 			vert1 = vert2;
 		}
 	}
-	fstream.close();
+
+	tkn.setBase(nullptr);
+	free(line);
 	return vd;
 }
 
+#if 0
 VertexData *VertexDataTools::readOFF(const std::string &path)
 {
 	FILE* f = fopen(path.c_str(),"r");
@@ -1229,81 +1335,15 @@ VertexData *VertexDataTools::readOFF(const std::string &path)
 	return vd;
 }
 
-bool VertexDataTools::writeVD(const VertexData *vd, const std::string &path)
-{
-	FILE* f = fopen(path.c_str(),"wb");
-	if(!f)
-		return 0;
-	std::string prefix = "VDFF";
-	uint32_t hline[5];
-
-	uint32_t num_attrib = static_cast<uint32_t>(::log2(ATTRIBUTE_LAST)+1.0);
-	hline[0] = *(static_cast<const uint32_t*>(prefix.c_str()));
-	hline[1] = (num_attrib+1)*5*sizeof(uint32_t); //headr size
-	hline[2] = 1; // version
-	hline[3] = num_attrib;
-	hline[4] = vd->primitive();
-
-	fwrite(hline,1,5*sizeof(uint32_t),f);
-	const Vertex v = vd->data()[0];
-
-#define addr_diff(a,b) static_cast<unsigned int>(\
-	((static_cast<const char*>(a)-\
-	reinterpret_cast<const char*>(b))))
-
-	hline[0] = POSITION;
-	hline[1] = 3;
-	hline[2] = FLOAT;
-	hline[3] = 0;
-	hline[4] = addr_diff(&(v.pos()),&v);
-	fwrite(hline,1,5*sizeof(uint32_t),f);
-	hline[0] = NORMAL;
-	hline[1] = 3;
-	hline[2] = FLOAT;
-	hline[3] = 0;
-	hline[4] = addr_diff(&(v.nrm()),&v);
-	fwrite(hline,1,5*sizeof(uint32_t),f);
-	hline[0] = TEXCOORD;
-	hline[1] = 3;
-	hline[2] = FLOAT;
-	hline[3] = 0;
-	hline[4] = addr_diff(&(v.tex()),&v);
-	fwrite(hline,1,5*sizeof(uint32_t),f);
-	hline[0] = TANGENT;
-	hline[1] = 3;
-	hline[2] = FLOAT;
-	hline[3] = 0;
-	hline[4] = addr_diff(&(v.tan()),&v);
-	fwrite(hline,1,5*sizeof(uint32_t),f);
-	hline[0] = COLOR;
-	hline[1] = 4;
-	hline[2] = FLOAT;
-	hline[3] = 0;
-	hline[4] = addr_diff(&(v.clr()),&v);
-	fwrite(hline,1,5*sizeof(uint32_t),f);
-#undef addr_diff
-
-	hline[0] = static_cast<uint32_t>(vd->data().size());
-	hline[1] = static_cast<uint32_t>(vd->data().size()*sizeof(Vertex));
-	hline[2] = static_cast<uint32_t>(vd->indices().size());
-	hline[3] = static_cast<uint32_t>(vd->indices().size() * sizeof(uint32_t));
-	hline[4] = UNSIGNED_INT;
-	fwrite(hline,1,5*sizeof(uint32_t),f);
-
-	fwrite(vd->data().data(),vd->data().size(),sizeof(Vertex),f);
-	fwrite(vd->indices().data(),vd->indices().size(),sizeof(uint32_t),f);
-	fclose(f);
-	return true;
-}
 #endif
 
 
 
 inline bool operator<(const vec3& a , const vec3& b)
 {
-	if (fabs(a.x - b.x) < std::numeric_limits<float>::epsilon())
+	if (fabsf(a.x - b.x) < std::numeric_limits<float>::epsilon())
 	{
-		if (fabs(a.y - b.y) < std::numeric_limits<float>::epsilon())
+		if (fabsf(a.y - b.y) < std::numeric_limits<float>::epsilon())
 		{
 			return a.z < b.z;
 		}
@@ -1322,7 +1362,7 @@ inline bool operator<(const vec3& a , const vec3& b)
 
 inline bool operator<(const vec2& a , const vec2& b)
 {
-	if (fabs(a.x - b.x) < std::numeric_limits<float>::epsilon())
+	if (fabsf(a.x - b.x) < std::numeric_limits<float>::epsilon())
 	{
 		return a.y < b.y;
 	}
@@ -1366,7 +1406,6 @@ bool VertexDataTools::writeOBJ(const VertexData *vd, FILE* f)
 	int nid = 1;
 	std::map<vec2,uint32_t,compare_vec_2> tex2id;
 	int tid = 1;
-	//std::vector<obj_face> faces;
 	const Primitive& prim = vd->primitive();
 	uint consumed = 0;
 	if(prim == TRIANGLES)
@@ -1564,15 +1603,15 @@ bool VertexDataTools::writeToFile(
 	switch (f)
 	{
 	case VD:
-		//		res = writeVD(vd,file);
+		res = writeVD(vd,file); break;
 	case OBJ:
-		res = writeOBJ(vd,file);
+		res = writeOBJ(vd,file);break;
 	case PLY:
-		res = writePLY(vd,file);
+		res = writePLY(vd,file);break;
 	case OFF:
-		res = writeOFF(vd,file);
+		res = writeOFF(vd,file);break;
 	case FROM_PATH:
-		res =  false;
+		res =  false;break;
 	}
 	fclose(file);
 	return res;
@@ -1607,7 +1646,7 @@ VertexData* VertexDataTools::readFromFile(
 	case OBJ:
 		res= readOBJ(file); break;
 	case PLY:
-		//		res= readPLY(file);break;
+		res= readPLY(file);break;
 	case OFF:
 		//		res= readOFF(file);break;
 	case FROM_PATH:
