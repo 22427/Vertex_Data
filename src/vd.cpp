@@ -1105,7 +1105,7 @@ void handle_v(VertexData* vd, std::map<Vertex,uint32_t>& v_loc, const Vertex& v)
 #define atoff(s) static_cast<float>(atof(s))
 #define atoiu(s) static_cast<uint32_t>(atoi(s))
 
-VertexData *VertexDataTools::readOBJ(FILE* f)
+VertexData *VDOps::read_obj(FILE* f)
 {
 
 	// mesh loader the 10000ths ^^
@@ -1138,23 +1138,23 @@ VertexData *VertexDataTools::readOBJ(FILE* f)
 	while (getline(&line,&cnt,f) != -1)
 	{
 		line_sav = line;
-		ltkn.setBase(line);
+		ltkn.set_base(line);
 		// remove comment
-		line = ltkn.getToken('#');//line.substr(0, line.find_first_of('#'));
-		ltkn.setBase(line);
-		ltkn.skipWhiteSpaces();
+		line = ltkn.get_token('#');//line.substr(0, line.find_first_of('#'));
+		ltkn.set_base(line);
+		ltkn.skip_white_spaces();
 
-		if (!ltkn.getRest()||!*(ltkn.getRest())) // the line was an empty line or a comment
+		if (!ltkn.get_rest()||!*(ltkn.get_rest())) // the line was an empty line or a comment
 			continue;
 
 
 
-		type = ltkn.getToken(' ');
+		type = ltkn.get_token(' ');
 
 		for (int i = 0; i < 4; i++)
 		{
-			ltkn.skipWhiteSpaces();
-			arg[i] = ltkn.getToken(' ');
+			ltkn.skip_white_spaces();
+			arg[i] = ltkn.get_token(' ');
 		}
 
 		if (type == "v")
@@ -1214,9 +1214,9 @@ VertexData *VertexDataTools::readOBJ(FILE* f)
 				{
 					for (int i = 0; i < 3; i++)
 					{
-						tkn.setBase(arg[i]);
-						tkn.getTokenAs(p_id,"/");
-						tkn.getTokenAs(t_id,"/");
+						tkn.set_base(arg[i]);
+						tkn.get_token_as(p_id,"/");
+						tkn.get_token_as(t_id,"/");
 
 						v.set_value(AttributeID::ATTRIB_POSITION, positions[p_id-1]);
 						v.set_value(AttributeID::ATTRIB_TEXCOORD, tex_coords[t_id-1]);
@@ -1227,10 +1227,10 @@ VertexData *VertexDataTools::readOBJ(FILE* f)
 				{
 					for (int i = 0; i < 3; i++)
 					{
-						tkn.setBase(arg[i]);
-						tkn.getTokenAs(p_id,"/");
-						tkn.getToken('/');
-						tkn.getTokenAs(n_id,"/");
+						tkn.set_base(arg[i]);
+						tkn.get_token_as(p_id,"/");
+						tkn.get_token('/');
+						tkn.get_token_as(n_id,"/");
 
 						v.set_value(AttributeID::ATTRIB_POSITION, positions[p_id-1]);
 						v.set_value(AttributeID::ATTRIB_NORMAL, tex_coords[n_id-1]);
@@ -1241,10 +1241,10 @@ VertexData *VertexDataTools::readOBJ(FILE* f)
 				{
 					for (int i = 0; i < 3; i++)
 					{
-						tkn.setBase(arg[i]);
-						tkn.getTokenAs(p_id,"/");
-						tkn.getTokenAs(t_id,"/");
-						tkn.getTokenAs(n_id,"/");
+						tkn.set_base(arg[i]);
+						tkn.get_token_as(p_id,"/");
+						tkn.get_token_as(t_id,"/");
+						tkn.get_token_as(n_id,"/");
 
 						v.set_value(AttributeID::ATTRIB_POSITION, positions[p_id-1]);
 						v.set_value(AttributeID::ATTRIB_TEXCOORD, tex_coords[t_id-1]);
@@ -1258,16 +1258,16 @@ VertexData *VertexDataTools::readOBJ(FILE* f)
 
 
 		type.clear();
-		ltkn.setBase(nullptr);
+		ltkn.set_base(nullptr);
 	}
-	tkn.setBase(nullptr);
+	tkn.set_base(nullptr);
 	if(line_sav)
 		free(line_sav);
 
 	return vd;
 }
 
-VertexData *VertexDataTools::readVD(FILE *f)
+VertexData *VDOps::read_vd(FILE *f)
 {
 	if(!f)
 		return nullptr;
@@ -1365,7 +1365,7 @@ VertexData *VertexDataTools::readVD(FILE *f)
 
 }
 
-bool VertexDataTools::writeVD(const VertexData *vd, FILE *f)
+bool VDOps::write_vd(const VertexData *vd, FILE *f)
 {
 	if(!f)
 		return false;
@@ -1443,7 +1443,7 @@ bool VertexDataTools::writeVD(const VertexData *vd, FILE *f)
 
 
 
-VertexData *VertexDataTools::readPLY(FILE* f)
+VertexData *VDOps::read_ply(FILE* f)
 {
 
 	if (!f)
@@ -1463,21 +1463,21 @@ VertexData *VertexDataTools::readPLY(FILE* f)
 	char* line = nullptr;
 	while (getline(&line,&n,f) >= 0)
 	{
-		tkn.setBase(line);
-		std::string op = tkn.getToken();
+		tkn.set_base(line);
+		std::string op = tkn.get_token();
 		if (op == "element")
 		{
-			std::string s = tkn.getToken();
+			std::string s = tkn.get_token();
 			if (s == "vertex")
 			{
 				vertex_prop = true;
 				face_prop = false;
-				tkn.getTokenAs(vertex_count,tkn.whitespaces);
+				tkn.get_token_as(vertex_count,tkn.whitespaces);
 
 			}
 			else if (s == "face")
 			{
-				tkn.getTokenAs(face_count,tkn.whitespaces);
+				tkn.get_token_as(face_count,tkn.whitespaces);
 				face_prop = true;
 				vertex_prop = false;
 			}
@@ -1488,8 +1488,8 @@ VertexData *VertexDataTools::readPLY(FILE* f)
 		}
 		else if (op == "property" && vertex_prop)
 		{
-			std::string type = tkn.getToken();
-			std::string name = tkn.getToken();
+			std::string type = tkn.get_token();
+			std::string name = tkn.get_token();
 			Type dt = type;
 			properties.push_back(name);
 			prop_types.push_back( dt);
@@ -1497,9 +1497,9 @@ VertexData *VertexDataTools::readPLY(FILE* f)
 		else if (op == "property" && face_prop)
 		{
 			std::string	res;
-			tkn.getToken();//list
-			tkn.getToken();// list length
-			res = tkn.getToken();// type of list data!
+			tkn.get_token();//list
+			tkn.get_token();// list length
+			res = tkn.get_token();// type of list data!
 			trim(res);
 			index_type = res;
 		}
@@ -1579,7 +1579,7 @@ VertexData *VertexDataTools::readPLY(FILE* f)
 	for (uint32_t i = 0; i < vertex_count; i++)
 	{
 		getline(&line,&n,f);
-		tkn.setBase(line);
+		tkn.set_base(line);
 		vec4 pos;
 		vec4 nrm;
 		vec4 clr;
@@ -1597,7 +1597,7 @@ VertexData *VertexDataTools::readPLY(FILE* f)
 				default: continue;
 			}
 
-			tkn.getTokenAs(*r,tkn.whitespaces);
+			tkn.get_token_as(*r,tkn.whitespaces);
 
 			if(p.n)
 				*r= static_cast<float>(static_cast<double>(*r)/p.t.max());
@@ -1614,17 +1614,17 @@ VertexData *VertexDataTools::readPLY(FILE* f)
 	for (uint32_t i = 0; i < face_count; i++)
 	{
 		getline(&line,&n,f);
-		tkn.setBase(line);
-		auto verts_in_this_face = atoi(tkn.getToken());
+		tkn.set_base(line);
+		auto verts_in_this_face = atoi(tkn.get_token());
 
 		uint32_t vert0;
 		uint32_t vert1;
 		uint32_t vert2;
-		tkn.getTokenAs(vert0,tkn.whitespaces);
-		tkn.getTokenAs(vert1,tkn.whitespaces);
+		tkn.get_token_as(vert0,tkn.whitespaces);
+		tkn.get_token_as(vert1,tkn.whitespaces);
 		for (int i = 2; i < verts_in_this_face; i+=1)
 		{
-			tkn.getTokenAs(vert2,tkn.whitespaces);
+			tkn.get_token_as(vert2,tkn.whitespaces);
 			vd->push_back(vert0);
 			vd->push_back(vert1);
 			vd->push_back(vert2);
@@ -1632,7 +1632,7 @@ VertexData *VertexDataTools::readPLY(FILE* f)
 		}
 	}
 
-	tkn.setBase(nullptr);
+	tkn.set_base(nullptr);
 	free(line);
 	return vd;
 }
@@ -1765,7 +1765,7 @@ public:
 	}
 };
 
-bool VertexDataTools::writeOBJ(const VertexData *vd, FILE* f)
+bool VDOps::write_obj(const VertexData *vd, FILE* f)
 {
 	if(!f)
 		return false;
@@ -1887,12 +1887,12 @@ bool VertexDataTools::writeOBJ(const VertexData *vd, FILE* f)
 	return true;
 }
 
-bool VertexDataTools::writePLY(const VertexData */*vd*/, FILE*/*f*/)
+bool VDOps::write_ply(const VertexData */*vd*/, FILE*/*f*/)
 {
 	return false;
 }
 
-bool VertexDataTools::writeOFF(const VertexData *vd, FILE* f)
+bool VDOps::write_off(const VertexData *vd, FILE* f)
 {
 
 	if(!f)
@@ -1928,10 +1928,10 @@ bool VertexDataTools::writeOFF(const VertexData *vd, FILE* f)
 	return true;
 }
 
-bool VertexDataTools::writeToFile(
+bool VDOps::write_to_file(
 		const VertexData *vd,
 		const std::string &p,
-		VertexDataTools::FileFormat f)
+		VDOps::FileFormat f)
 {
 
 
@@ -1955,13 +1955,13 @@ bool VertexDataTools::writeToFile(
 	switch (f)
 	{
 	case VD:
-		res = writeVD(vd,file); break;
+		res = write_vd(vd,file); break;
 	case OBJ:
-		res = writeOBJ(vd,file);break;
+		res = write_obj(vd,file);break;
 	case PLY:
-		res = writePLY(vd,file);break;
+		res = write_ply(vd,file);break;
 	case OFF:
-		res = writeOFF(vd,file);break;
+		res = write_off(vd,file);break;
 	case FROM_PATH:
 		res =  false;break;
 	}
@@ -1969,9 +1969,9 @@ bool VertexDataTools::writeToFile(
 	return res;
 }
 
-VertexData* VertexDataTools::readFromFile(
+VertexData* VDOps::read_from_file(
 		const std::string &path,
-		VertexDataTools::FileFormat f)
+		VDOps::FileFormat f)
 {
 	std::string ending = paths::extension(path);
 	if (f == FROM_PATH)
@@ -1994,11 +1994,11 @@ VertexData* VertexDataTools::readFromFile(
 	VertexData* res = nullptr;;
 	switch (f) {
 	case VD:
-		res= readVD(file); break;
+		res= read_vd(file); break;
 	case OBJ:
-		res= readOBJ(file); break;
+		res= read_obj(file); break;
 	case PLY:
-		res= readPLY(file);break;
+		res= read_ply(file);break;
 	case OFF:
 		//		res= readOFF(file);break;
 	case FROM_PATH:
@@ -2008,7 +2008,7 @@ VertexData* VertexDataTools::readFromFile(
 	return res;
 }
 
-bool VertexDataTools::recalculate_normals(VertexData *vd, AttributeID to_attribute)
+bool VDOps::recalculate_normals(VertexData *vd, AttributeID to_attribute)
 {
 	if(!vd->vertex_configuration().has_attribute(to_attribute))
 	{
@@ -2119,7 +2119,7 @@ bool VertexDataTools::recalculate_normals(VertexData *vd, AttributeID to_attribu
 	return true;
 }
 
-bool VertexDataTools::recalculate_tangents(VertexData *vd, AttributeID to_attribute)
+bool VDOps::recalculate_tangents(VertexData *vd, AttributeID to_attribute)
 {
 	if(!vd->vertex_configuration().has_attribute(to_attribute))
 	{
@@ -2168,7 +2168,7 @@ bool VertexDataTools::recalculate_tangents(VertexData *vd, AttributeID to_attrib
 	return true;
 }
 
-VertexData *VertexDataTools::reconfigure(VertexData *data, const VertexConfiguration &new_config, bool null)
+VertexData *VDOps::reconfigure(VertexData *data, const VertexConfiguration &new_config, bool null)
 {
 	VertexData* res = new VertexData(data->m_render_primitive,new_config,data->m_vertex_count,data->m_index_type,data->m_index_count);
 	memcpy(res->indices(),data->indices(),data->index_count()*data->m_index_type.size());
@@ -2209,21 +2209,23 @@ Tokenizer::Tokenizer(const std::string& base)
 	this->m_base = new char[base.length() + 1];
 	memcpy(this->m_base, base.data(), base.length() + 1);
 	this->m_rest = this->m_base;
+	m_delete_base = true;
 }
 
 Tokenizer::Tokenizer(char *base)
 {
+	m_delete_base = false;
 	m_base = m_rest = base;
 }
 
 Tokenizer::~Tokenizer()
 {
-	if(m_base)
+	if(m_delete_base && m_base)
 		delete[] m_base;
 }
 
 
-char* Tokenizer::getToken(char separator)
+char* Tokenizer::get_token(char separator)
 {
 	char* to_ret = m_rest;
 
@@ -2254,7 +2256,7 @@ bool contains(const std::string& str, const char c)
 	}
 	return false;
 }
-char* Tokenizer::getToken(const std::string& separators, char* sep)
+char* Tokenizer::get_token(const std::string& separators, char* sep)
 {
 	char* to_ret = m_rest;
 
@@ -2279,14 +2281,14 @@ char* Tokenizer::getToken(const std::string& separators, char* sep)
 }
 
 
-void Tokenizer::skipOverAll(const std::string& seps)
+void Tokenizer::skip_over_all(const std::string& seps)
 {
 	while(*m_rest && contains(seps,*m_rest))
 	{
 		m_rest++;
 	}
 }
-void Tokenizer::skipWhiteSpaces()
+void Tokenizer::skip_white_spaces()
 {
 	while(*m_rest && isspace(*m_rest))
 		m_rest++;
@@ -2295,7 +2297,9 @@ void Tokenizer::skipWhiteSpaces()
 
 void Tokenizer::reset(const std::string& base)
 {
-	delete[] this->m_base;
+	if(m_delete_base && m_base)
+		delete[] m_base;
+	m_delete_base  = true;
 	this->m_base = new char[base.length() + 1];
 	memcpy(this->m_base, base.data(), base.length() + 1);
 	this->m_rest = this->m_base;

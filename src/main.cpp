@@ -9,10 +9,10 @@ int main(int argc, char ** argv)
 {
 	if(argc < 3)
 		return 0;
-	auto vd = VertexDataTools::readFromFile(argv[1]);
+	auto vd = VDOps::read_from_file(argv[1]);
 	if(!vd)
 		printf("error opening file!\n");
 	else
-		VertexDataTools::writeToFile(vd,argv[2]);
+		VDOps::write_to_file(vd,argv[2]);
 	return  0;
 };

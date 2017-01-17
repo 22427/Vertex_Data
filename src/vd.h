@@ -246,16 +246,20 @@ class Tokenizer
 protected:
 	char* m_base;
 	char* m_rest;
+	bool m_delete_base;
 public:
 	static std::string whitespaces;
 	Tokenizer(const std::string& base);
 	Tokenizer(char* base);
 	~Tokenizer();
 
-	void setBase(char* base)
+	void set_base(char* base)
 	{
+		if(m_delete_base)
+			free(base);
 		m_base = base;
 		m_rest = base;
+		m_delete_base = false;
 	}
 	/**
 	 * @brief reset Will free the current base and set a new one.
@@ -272,7 +276,7 @@ public:
 	 * @param separator The seperator character
 	 * @return string untill the first appearence of seperator, or nullptr.
 	 */
-	char* getToken(char separator);
+	char* get_token(char separator);
 
 	/**
 	 * @brief Will return the string till and without one! of the seperators!
@@ -281,7 +285,7 @@ public:
 	 * @param sep Will contain the seperator actually found.
 	 * @return string till the first appearence of a seperator, or nullptr.
 	 */
-	char* getToken(const std::string& separators = whitespaces,
+	char* get_token(const std::string& separators = whitespaces,
 				   char* sep = nullptr);
 
 
@@ -293,7 +297,7 @@ public:
 	 * @return
 	 */
 	template<typename T>
-	bool getTokenAs(T& res,const std::string &separators = whitespaces,
+	bool get_token_as(T& res,const std::string &separators = whitespaces,
 					char *sep = nullptr)
 	{
 		throw "TYPE NOT SUPPORTED!!!";
@@ -306,20 +310,20 @@ public:
 	 * ".,;..:,;,,.foo...." ---skipOverAll(";.,:")--> "foo...."
 	 * @param separators String contianing all possible seperatos.
 	 */
-	void skipOverAll(const std::string& seps);
+	void skip_over_all(const std::string& seps);
 
 	/**
 	 * @brief skipOverAll Skipps all consecutive appearences of whitespaces.
 	 * Example:
 	 * "           foo...." ---skipWhiteSpaces()--> "foo...."
 	 */
-	void skipWhiteSpaces();
+	void skip_white_spaces();
 
 	/**
 	 * @brief getRest The remaining string,
 	 * @return
 	 */
-	char* getRest(){ return m_rest; }
+	char* get_rest(){ return m_rest; }
 
 
 	/**
@@ -327,7 +331,7 @@ public:
 	 * >"hello \"World\" !"< -> >hello "World" !<
 	 * @return
 	 */
-	bool readEscString(std::string& res)
+	bool read_esc_string(std::string& res)
 	{
 		std::string r;
 		while(*m_rest != '"')
@@ -356,7 +360,7 @@ public:
 	 * @param closing
 	 * @return
 	 */
-	char* getTokenTillClosing(char opening, char closing)
+	char* get_token_till_closing(char opening, char closing)
 	{
 
 		while(*m_rest && *m_rest!=opening)
@@ -390,97 +394,97 @@ public:
 };
 
 
-template<> inline bool Tokenizer::getTokenAs<int>(
+template<> inline bool Tokenizer::get_token_as<int>(
 		int& res,
 		const std::string &seps,
 		char *sep )
 {
-	char* c = getToken(seps,sep);
+	char* c = get_token(seps,sep);
 	if(c)
 		res = atoi(c);
 	return c;
 }
 
-template<> inline bool Tokenizer::getTokenAs<uint>(
+template<> inline bool Tokenizer::get_token_as<uint>(
 		uint& res,
 		const std::string &seps,
 		char *sep )
 {
-	char* c = getToken(seps,sep);
+	char* c = get_token(seps,sep);
 	if(c)
 		res = static_cast<uint>(atoi(c));
 	return c;
 }
 
-template<> inline bool Tokenizer::getTokenAs<float>(
+template<> inline bool Tokenizer::get_token_as<float>(
 		float& res,
 		const std::string &seps ,
 		char *sep )
 {
-	char* c = getToken(seps,sep);
+	char* c = get_token(seps,sep);
 	if(c)
 		res = atof(c);
 	return c;
 }
 
 
-template<> inline bool Tokenizer::getTokenAs<double>(
+template<> inline bool Tokenizer::get_token_as<double>(
 		double& res,
 		const std::string &seps ,
 		char *sep )
 {
-	char* c = getToken(seps,sep);
+	char* c = get_token(seps,sep);
 	if(c)
 		res = atof(c);
 	return c;
 }
 
-template<> inline bool Tokenizer::getTokenAs<bool>(
+template<> inline bool Tokenizer::get_token_as<bool>(
 		bool& res,
 		const std::string &seps ,
 		char *sep )
 {
-	char* c=  getToken(seps,sep);
+	char* c=  get_token(seps,sep);
 	if(c)
 		res = strcmp(c,"false");
 	return c;
 }
 
 
-template<> inline bool Tokenizer::getTokenAs<glm::vec4>(
+template<> inline bool Tokenizer::get_token_as<glm::vec4>(
 		glm::vec4& res,
 		const std::string &seps,
 		char *sep )
 {
 	// should look like "(x,y,z,w)"
-	char* c = getToken(seps,sep);
+	char* c = get_token(seps,sep);
 	if(!c)
 		return  false;
 
 	Tokenizer t(c);
 
-	t.getToken('(');
-	bool r =  t.getTokenAs(res.x,",") && t.getTokenAs(res.y,",") && t.getTokenAs(res.z,",") && t.getTokenAs(res.w,")");
-	t.setBase(nullptr);
+	t.get_token('(');
+	bool r =  t.get_token_as(res.x,",") && t.get_token_as(res.y,",") && t.get_token_as(res.z,",") && t.get_token_as(res.w,")");
+	t.set_base(nullptr);
 	return r;
 }
 
 
-template<> inline bool Tokenizer::getTokenAs<glm::mat4>(
+template<> inline bool Tokenizer::get_token_as<glm::mat4>(
 		glm::mat4& res,
 		const std::string &seps,
 		char *sep )
 {
 	// should look like "((x,y,z,w),(x,y,z,w),(x,y,z,w),(x,y,z,w))"
-	char* c = getToken(seps,sep);
+	char* c = get_token(seps,sep);
 	if(!c)
 		return  false;
 
 	Tokenizer t(c);
 
-	t.getToken('(');
-	bool r =  t.getTokenAs(res[0],",") && t.getTokenAs(res[1],",") && t.getTokenAs(res[2],",") && t.getTokenAs(res[3],")");
-	t.setBase(nullptr);
+	t.get_token('(');
+	bool r =  t.get_token_as(res[0],",") && t.get_token_as(res[1],",") && t.get_token_as(res[2],",") && t.get_token_as(res[3],")");
+	t.set_base(nullptr);
 	return r;
 }
 
@@ -631,7 +635,6 @@ public:
 	bool operator == (const Attribute& o)const
 	{
 		bool same = true;
-
 		same &= attribute_id == o.attribute_id;
 		same &= elements == o.elements;
 		same &= type == o.type;
@@ -813,7 +816,7 @@ private:
 	uint m_vertex_reserve;
 
 public:
-	friend class VertexDataTools;
+	friend class VDOps;
 
 	/**
 	 * @brief The VertexIterator class an iterator used to iterate over all
@@ -996,31 +999,31 @@ public:
 };
 
 
-class VertexDataTools
+class VDOps
 {
 protected:
 public:
 
-	static VertexData* readVD(FILE* f);
-	static VertexData* readOBJ(FILE* f);
-	static VertexData* readPLY(FILE* f);
-	static VertexData* readOFF(FILE* f);
+	static VertexData* read_vd(FILE* f);
+	static VertexData* read_obj(FILE* f);
+	static VertexData* read_ply(FILE* f);
+	static VertexData* read_off(FILE* f);
 
-	static VertexData* readVD(const void* mem);
-	static VertexData* readOBJ(const void* mem);
-	static VertexData* readPLY(const void* mem);
-	static VertexData* readOFF(const void* mem);
+	static VertexData* read_vd(const void* mem);
+	static VertexData* read_obj(const void* mem);
+	static VertexData* read_ply(const void* mem);
+	static VertexData* read_off(const void* mem);
 
 
-	static bool writeVD(const VertexData* vd, FILE* f);
-	static bool writeOBJ(const VertexData* vd, FILE* f);
-	static bool writePLY(const VertexData* vd, FILE* f);
-	static bool writeOFF(const VertexData* vd, FILE* f);
+	static bool write_vd(const VertexData* vd, FILE* f);
+	static bool write_obj(const VertexData* vd, FILE* f);
+	static bool write_ply(const VertexData* vd, FILE* f);
+	static bool write_off(const VertexData* vd, FILE* f);
 
-	static bool writeVD( const VertexData* vd, void** mem);
-	static bool writeOBJ(const VertexData* vd, void** mem);
-	static bool writePLY(const VertexData* vd, void** mem);
-	static bool writeOFF(const VertexData* vd, void** mem);
+	static bool write_vd( const VertexData* vd, void** mem);
+	static bool write_obj(const VertexData* vd, void** mem);
+	static bool write_ply(const VertexData* vd, void** mem);
+	static bool write_off(const VertexData* vd, void** mem);
 
 	enum FileFormat
 	{
@@ -1038,7 +1041,7 @@ public:
 	 * be determined from the file ending
 	 * @return true if everything went well, false if there was a problem.
 	 */
-	static bool writeToFile(const VertexData* vd,const std::string& path,
+	static bool write_to_file(const VertexData* vd,const std::string& path,
 							FileFormat f=FROM_PATH);
 
 	/**
@@ -1047,7 +1050,7 @@ public:
 	 * @param f The format of the source file
 	 * @return the VertexData read, or a nullptr, if something went wrong.
 	 */
-	static VertexData* readFromFile(const std::string& path,
+	static VertexData* read_from_file(const std::string& path,
 									FileFormat f = FROM_PATH);
 
 	/**
