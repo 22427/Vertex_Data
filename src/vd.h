@@ -1,10 +1,35 @@
 #pragma once
-#include <glm/glm.hpp>
 #include <vector>
 #include <string>
-#include <cstring>
 #include <map>
 #include <cstdint>
+#include <algorithm>
+#include <functional>
+#include <cctype>
+#include <locale>
+#include <iostream>
+#include <ostream>
+#include <istream>
+#include <cstring>
+#include <cmath>
+#include <glm/glm.hpp>
+
+
+#include "types.h"
+
+
+
+
+typedef glm::vec2 vec2;
+typedef  glm::vec3 vec3;
+typedef  glm::vec4 vec4;
+typedef  uint32_t uint;
+typedef  uint8_t ubyte;
+typedef  int8_t byte;
+
+
+namespace typ {
+
 
 template<typename T>
 inline typename std::enable_if<std::is_floating_point<T>::value || std::is_class<T>::value, T>::type
@@ -65,47 +90,6 @@ int_to_float(const T x)
 }
 
 
-typedef glm::vec2 vec2;
-typedef  glm::vec3 vec3;
-typedef  glm::vec4 vec4;
-typedef  uint32_t uint;
-typedef  uint8_t ubyte;
-typedef  int8_t byte;
-
-enum Primitive
-{
-	POINTS = 0x0000,			// == GL_POINTS
-	LINES = 0x0001,				// == GL_LINES
-	//LINE_LOOP = 0x0002,		// == GL_LINE_LOOP
-	LINE_STRIP = 0x0003,		// == GL_LINE_STRIP
-	TRIANGLES = 0x0004,			// == GL_TRIANGLES
-	TRIANGLE_STRIP = 0x0005,	// == GL_TRIANGLE_STRIP
-	//TRIANGLE_FAN = 0x0006,	// == GL_TRIANGLE_FAN
-	QUADS = 0x0007,				// == GL_QUADS
-	QUAD_STRIP = 0x0008,		// == GL_QUAD_STRIP
-	//POLYGON = 0x0009,			// == GL_POLYGON
-};
-
-enum AttributeID
-{
-	POSITION =0,
-	NORMAL,
-	TEXCOORD,
-	TANGENT,
-	COLOR,
-	UDEF_0,
-	UDEF_1,
-	UDEF_2,
-	UDEF_3,
-	UDEF_4,
-	UDEF_5,
-	UDEF_6,
-	UDEF_7,
-	UDEF_8,
-	UDEF_9,
-	UDEF_10
-};
-
 enum TypeID
 {
 	INVALID = 0x00,
@@ -163,6 +147,23 @@ public:
 	operator TypeID() const
 	{
 		return  id;
+	}
+
+	std::string to_string()
+	{
+		switch (id)
+		{
+		case TypeID::BYTE: return  "char";
+		case TypeID::UNSIGNED_BYTE: return  "uchar";
+		case TypeID::SHORT: return  "short";
+		case TypeID::UNSIGNED_SHORT: return  "ushort";
+		case TypeID::INT: return  "int";
+		case TypeID::UNSIGNED_INT: return  "uint";
+		case TypeID::FLOAT: return  "float";
+		case TypeID::DOUBLE: return  "double";
+		case INVALID: return "INVALID";
+		}
+		return  "";
 	}
 
 
@@ -251,6 +252,383 @@ public:
 		return  0;
 	}
 };
+}
+
+
+
+
+namespace stru
+{
+
+/**
+ * @brief ltrim removes all whitespaces on the left side of s
+ * @param s
+ */
+static inline void ltrim(std::string &s)
+{
+	s.erase(s.begin(),std::find_if(s.begin(), s.end(),
+								   std::not1(std::ptr_fun<int, int>(std::isspace))));
+}
+
+/**
+ * @brief ltrim removes all whitespaces on the right side of s
+ * @param s
+ */
+static inline void rtrim(std::string &s)
+{
+	s.erase(std::find_if(s.rbegin(), s.rend(),
+						 std::not1(std::ptr_fun<int,int>(std::isspace))).base(),
+			s.end());
+}
+
+/**
+ * @brief ltrim removes all whitespaces on the both sides of s
+ * @param s
+ */
+static inline void trim(std::string &s){ltrim(s);rtrim(s);}
+
+
+
+/**
+ * @brief The Tokenizer class is a tool to parse strings. It works linke strtok,
+ * but it has a local state.
+ * It works by a simple principle. There is a head pointer. Everytime you ask
+ * for a token. the current head will be returned, and the first appearing
+ * seperator character is searched and set to zero.
+ * NOTE: Only _ONE_ character will be set to zero. Even if there are three
+ * seperators in a row, only the first one will be set to zero.
+ */
+class Tokenizer
+{
+protected:
+	char* m_base;
+	char* m_rest;
+public:
+	static std::string whitespaces;
+	Tokenizer(const std::string& base);
+	Tokenizer(char* base);
+	~Tokenizer();
+
+	void setBase(char* base)
+	{
+		m_base = base;
+		m_rest = base;
+	}
+	/**
+	 * @brief reset Will free the current base and set a new one.
+	 * @param base The new base.
+	 */
+	void reset(const std::string& base);
+
+	/**
+	 * @brief getToken Will return the string until and without the seperator
+	 * character:
+	 * For example:
+	 * "foo,bar..." ---getToken(',')--> "foo"
+	 *
+	 * @param separator The seperator character
+	 * @return string untill the first appearence of seperator, or nullptr.
+	 */
+	char* getToken(char separator);
+
+	/**
+	 * @brief Will return the string till and without one! of the seperators!
+	 * "foo;,.bar..." ---getToken(",.;",c)--> "foo",c=;
+	 * @param separators String contianing all possible seperatos.
+	 * @param sep Will contain the seperator actually found.
+	 * @return string till the first appearence of a seperator, or nullptr.
+	 */
+	char* getToken(const std::string& separators = whitespaces,
+				   char* sep = nullptr);
+
+
+	/**
+	 * @brief getTokenAs Will read a string untill one of the seperators appear
+	 * and return it interpreted.
+	 * @param separators String contianing all possible seperatos.
+	 * @param sep Will contain the seperator actually found.
+	 * @return
+	 */
+	template<typename T>
+	bool getTokenAs(T& res,const std::string &separators = whitespaces,
+					char *sep = nullptr)
+	{
+		throw "TYPE NOT SUPPORTED!!!";
+		return false;
+	}
+
+	/**
+	 * @brief skipOverAll Skipps all consecutive appearences of char in seps.
+	 * Example:
+	 * ".,;..:,;,,.foo...." ---skipOverAll(";.,:")--> "foo...."
+	 * @param separators String contianing all possible seperatos.
+	 */
+	void skipOverAll(const std::string& seps);
+
+	/**
+	 * @brief skipOverAll Skipps all consecutive appearences of whitespaces.
+	 * Example:
+	 * "           foo...." ---skipWhiteSpaces()--> "foo...."
+	 */
+	void skipWhiteSpaces();
+
+	/**
+	 * @brief getRest The remaining string,
+	 * @return
+	 */
+	char* getRest(){ return m_rest; }
+
+
+	/**
+	 * @brief readEscString munches off an escaped string.
+	 * >"hello \"World\" !"< -> >hello "World" !<
+	 * @return
+	 */
+	bool readEscString(std::string& res)
+	{
+		std::string r;
+		while(*m_rest != '"')
+			m_rest++;
+		if(!*m_rest)
+			return false;
+		while(*m_rest!= '"' && *m_rest)
+		{
+			if(*m_rest == '\\')
+					m_rest++;
+			r+=*m_rest;
+			m_rest++;
+		}
+
+		if(!*m_rest)
+			return false;
+
+		res = r;
+		return true;
+	}
+
+	/**
+	 * @brief getTokenTillClosing Returns the inlay of an area marked by opening and closing chars:
+	 * "  { 1,2,{3}}" --getTokenTillClosing('{','}')--> " 1,2,{3}"
+	 * @param opening
+	 * @param closing
+	 * @return
+	 */
+	char* getTokenTillClosing(char opening, char closing)
+	{
+
+		while(*m_rest && *m_rest!=opening)
+		{
+			m_rest++;
+		}
+		m_rest++;
+		char* res = m_rest;
+		if(!m_rest)
+			return nullptr;
+
+
+		int count = 1;
+		while(count > 0)
+		{
+			m_rest++;
+			if(!*m_rest)
+				return nullptr;
+			if(*m_rest == opening)
+				count++;
+			if(*m_rest == closing)
+				count--;
+		}
+
+		if(!*m_rest)
+			return nullptr;
+		*m_rest = 0;
+		m_rest++;
+		return res;
+	}
+};
+
+
+template<> inline bool Tokenizer::getTokenAs<int>(
+		int& res,
+		const std::string &seps,
+		char *sep )
+{
+	char* c = getToken(seps,sep);
+	if(c)
+		res = atoi(c);
+	return c;
+}
+
+template<> inline bool Tokenizer::getTokenAs<uint>(
+		uint& res,
+		const std::string &seps,
+		char *sep )
+{
+	char* c = getToken(seps,sep);
+	if(c)
+		res = static_cast<uint>(atoi(c));
+	return c;
+}
+
+template<> inline bool Tokenizer::getTokenAs<float>(
+		float& res,
+		const std::string &seps ,
+		char *sep )
+{
+	char* c = getToken(seps,sep);
+	if(c)
+		res = atof(c);
+	return c;
+}
+
+
+template<> inline bool Tokenizer::getTokenAs<double>(
+		double& res,
+		const std::string &seps ,
+		char *sep )
+{
+	char* c = getToken(seps,sep);
+	if(c)
+		res = atof(c);
+	return c;
+}
+
+template<> inline bool Tokenizer::getTokenAs<bool>(
+		bool& res,
+		const std::string &seps ,
+		char *sep )
+{
+	char* c=  getToken(seps,sep);
+	if(c)
+		res = strcmp(c,"false");
+	return c;
+}
+
+
+template<> inline bool Tokenizer::getTokenAs<glm::vec4>(
+		glm::vec4& res,
+		const std::string &seps,
+		char *sep )
+{
+	// should look like "(x,y,z,w)"
+	char* c = getToken(seps,sep);
+	if(!c)
+		return  false;
+
+	Tokenizer t(c);
+
+	t.getToken('(');
+	bool r =  t.getTokenAs(res.x,",") && t.getTokenAs(res.y,",") && t.getTokenAs(res.z,",") && t.getTokenAs(res.w,")");
+	t.setBase(nullptr);
+	return r;
+}
+
+
+template<> inline bool Tokenizer::getTokenAs<glm::mat4>(
+		glm::mat4& res,
+		const std::string &seps,
+		char *sep )
+{
+	// should look like "((x,y,z,w),(x,y,z,w),(x,y,z,w),(x,y,z,w))"
+	char* c = getToken(seps,sep);
+	if(!c)
+		return  false;
+
+	Tokenizer t(c);
+
+	t.getToken('(');
+	bool r =  t.getTokenAs(res[0],",") && t.getTokenAs(res[1],",") && t.getTokenAs(res[2],",") && t.getTokenAs(res[3],")");
+	t.setBase(nullptr);
+	return r;
+}
+
+
+
+
+
+namespace paths
+{
+
+
+static inline bool is_directory(const std::string& p)
+{
+	return p.at(p.length()-1) == '/';
+}
+static inline bool is_relative(const std::string& p)
+{
+	if(p.length()<2)
+		return false;
+	return p.at(0) != '/' && p.at(1) != ':';
+}
+
+static inline std::string file(const std::string& p)
+{
+	if(is_directory(p))
+		return "";
+
+	return p.substr(p.find_last_of('/')+1);
+}
+
+static inline std::string filename(const std::string& p)
+{
+	if(is_directory(p))
+		return "";
+	auto locd = p.find_last_of('.');
+	auto locs =  p.find_last_of('/');
+	if(locs == p.npos)
+		locs = 0;
+	else
+		locs++;
+	if(locd < locs)
+		locd = p.npos;
+
+	return p.substr(locs,locd-locs);
+}
+
+static inline std::string extension(const std::string& p)
+{
+	if(is_directory(p))
+		return "";
+	auto loc = p.find_last_of('.');
+	auto sloc = loc > p.find_last_of('/');
+	if(loc > sloc || sloc == p.npos)
+		return p.substr(loc+1);
+	return "";
+}
+
+static inline std::string without_extension(const std::string& p)
+{
+	if(is_directory(p))
+		return p;
+	auto loc = p.find_last_of('.');
+	return p.substr(0,loc);
+}
+
+}
+}
+
+enum Primitive
+{
+	POINTS = 0x0000,			// == GL_POINTS
+	LINES = 0x0001,				// == GL_LINES
+	//LINE_LOOP = 0x0002,		// == GL_LINE_LOOP
+	LINE_STRIP = 0x0003,		// == GL_LINE_STRIP
+	TRIANGLES = 0x0004,			// == GL_TRIANGLES
+	TRIANGLE_STRIP = 0x0005,	// == GL_TRIANGLE_STRIP
+	//TRIANGLE_FAN = 0x0006,	// == GL_TRIANGLE_FAN
+	QUADS = 0x0007,				// == GL_QUADS
+	QUAD_STRIP = 0x0008,		// == GL_QUAD_STRIP
+	//POLYGON = 0x0009,			// == GL_POLYGON
+};
+
+enum AttributeID
+{
+	ATTRIB_POSITION =0,
+	ATTRIB_NORMAL,
+	ATTRIB_TEXCOORD,
+	ATTRIB_TANGENT,
+	ATTRIB_COLOR,
+	ATTRIB_COUNT
+};
 
 
 class Attribute
@@ -258,7 +636,7 @@ class Attribute
 public:
 	AttributeID attribute_id;
 	uint32_t elements;
-	Type type;
+	typ::Type type;
 	uint32_t offset;
 	bool normalized;
 	bool use_constant;
@@ -270,29 +648,19 @@ public:
 
 	Attribute()
 	{
-		attribute_id = AttributeID::POSITION;
+		attribute_id = ATTRIB_POSITION;
 		elements = 0;
-		type = FLOAT;
+		type = typ::FLOAT;
 		offset = 0;
 		normalized = false;
 		use_constant = false;
+		memset(constant,0,4*sizeof(uint64_t));
 
 	}
-//	Attribute(const Attribute& atr)
-//	{
-//		attribute_id = atr.attribute_id;
-//		elements = atr.elements;
-//		type = atr.type;
-//		offset = 0;
-//		normalized = atr.normalized;
-//		use_constant = atr.use_constant;
-//		memcpy(constant,atr.constant,4*sizeof(uint64_t));
-//	}
-
 
 	Attribute(const AttributeID id,
 			  const uint elements,
-			  const Type type,
+			  const typ::Type type,
 			  const bool normalized,
 			  bool use_constant = false,
 			  const void* constant = nullptr);
@@ -320,7 +688,6 @@ public:
 		if(use_constant)
 			same &= memcmp(constant,o.constant,4*sizeof(uint64_t));
 		return  same;
-
 	}
 
 	bool operator != (const Attribute& o)const
@@ -423,22 +790,9 @@ public:
 			free(m_data);
 	}
 	Vertex(const VertexConfiguration&c,void* b);
-	Vertex(const Vertex& o):m_data(nullptr),cfg(o.cfg)
-	{
-		if(o.m_data)
-		{
-			m_data = static_cast<ubyte*>(malloc(cfg.vertex_size()));
-			memcpy(m_data,o.m_data,cfg.vertex_size());
-			m_destroy_data = true;
-		}
-	}
+	Vertex(const Vertex& o);
 
-	void set_data(ubyte* d)
-	{
-		if(m_data && m_destroy_data)
-			free(m_data);
-		m_data = d;
-	}
+	void set_data(ubyte* d);
 	void load_data(ubyte* d)
 	{
 		if(m_data && !m_destroy_data)
@@ -459,63 +813,16 @@ public:
 	bool setAttribute(const AttributeID id,const vec2& v) const;
 	bool setAttribute(const AttributeID id,const float v) const;
 
-	void* get_attribute_ptr(const AttributeID id)
-	{
-		if(cfg.has_attribute(id))
-			return static_cast<ubyte*>(m_data)+cfg.get_attribute_by_id(id).offset;
-		else
-			return nullptr;
-	}
+	void* get_attribute_ptr(const AttributeID id);
 
-	bool has_attribute(const AttributeID id) const
-	{
-		return cfg.has_attribute(id);
-	}
+	bool has_attribute(const AttributeID id) const;
 
 
-	bool is_equal(const Vertex& o)const
-	{
-		for(uint i = 0 ; i< cfg.attribute_count();i++)
-		{
-			const Attribute& a = cfg.get_attribute(i);
-			if(o.has_attribute(a.attribute_id))
-			{
-				vec4 me, you;
-				getAttribute(a.attribute_id,me);
-				o.getAttribute(a.attribute_id,you);
+	bool is_equal(const Vertex& o)const;
 
-				if(me!=you)
-					return false;
-			}
-		}
-		return  true;
-	}
-
-	bool operator == (const Vertex& o)const
-	{
-		if(cfg != o.cfg)
-			return false;
-		return memcmp(m_data,o.m_data,cfg.vertex_size());
-	}
-
-	bool operator != (const Vertex& o)const
-	{
-		return  !(*this==o);
-	}
-
-	bool operator < (const Vertex& o)	const
-	{
-		const ubyte* a = static_cast<ubyte*>(m_data);
-		const ubyte* b = static_cast<ubyte*>(o.m_data);
-		for(uint i =0; i <cfg.vertex_size();i++)
-		{
-			if(a[i]<b[i])
-				return true;
-			if(a[i]>b[i])
-				return false;
-		}
-		return false;
-	}
+	bool operator == (const Vertex& o)const;
+	bool operator != (const Vertex& o)const;
+	bool operator < (const Vertex& o)	const;
 };
 
 
@@ -528,7 +835,7 @@ class VertexData
 private:
 
 	Primitive m_render_primitive;
-	Type m_index_type;
+	typ::Type m_index_type;
 
 	uint m_index_count;
 	uint m_index_reserve;
@@ -538,9 +845,6 @@ private:
 	void* m_vertex_data;
 	uint m_vertex_count;
 	uint m_vertex_reserve;
-
-
-
 
 public:
 	friend class VertexDataTools;
@@ -561,7 +865,7 @@ public:
 	VertexData(Primitive primitive,
 			   VertexConfiguration cfg,
 			   const uint res_vtx = 0,
-			   const Type index_type = Type(UNSIGNED_SHORT),
+			   const typ::Type index_type = typ::Type(typ::UNSIGNED_SHORT),
 			   const uint res_idx = 0);
 	virtual ~VertexData()
 	{
@@ -588,7 +892,7 @@ public:
 
 
 
-	Type index_type()const {return  m_index_type;}
+	typ::Type index_type()const {return  m_index_type;}
 	uint32_t index_count()const{return m_index_count;}
 	void indices_reserve(const uint c);
 	void indices_null()
@@ -617,38 +921,10 @@ public:
 
 
 
-	uint32_t get_index(const uint32_t i) const
-	{
-		assert(m_index_type.is_integer() && m_index_type.is_unsigned());
-
-		switch (m_index_type.id)
-		{
-		case UNSIGNED_BYTE: return static_cast<uint8_t* >(m_index_data)[i];
-		case UNSIGNED_SHORT:return static_cast<uint16_t*>(m_index_data)[i];
-		case UNSIGNED_INT:  return static_cast<uint32_t*>(m_index_data)[i];
-		case BYTE:case SHORT:case INT: case FLOAT: case DOUBLE: case INVALID:
-			return ~0u;
-		}
-		return  ~0u;
-	}
+	uint32_t get_index(const uint32_t i) const;
 
 
-	void set_index(const uint32_t i, const uint32_t v)
-	{
-		assert(m_index_type.is_integer() && m_index_type.is_unsigned());
-
-		switch (m_index_type.id)
-		{
-		case UNSIGNED_BYTE:  static_cast<uint8_t* >(m_index_data)[i] =
-					static_cast<uint8_t >(v);break;
-		case UNSIGNED_SHORT: static_cast<uint16_t*>(m_index_data)[i] =
-					static_cast<uint16_t>(v);break;
-		case UNSIGNED_INT:   static_cast<uint32_t*>(m_index_data)[i] =
-					static_cast<uint32_t>(v);break;
-		case BYTE:case SHORT:case INT: case FLOAT: case DOUBLE: case INVALID:
-			break;
-		}
-	}
+	void set_index(const uint32_t i, const uint32_t v);
 
 
 	/**
@@ -684,6 +960,7 @@ class VertexDataTools
 protected:
 public:
 
+	static VertexData* readVD(FILE* f);
 	static VertexData* readOBJ(FILE* f);
 	static VertexData* readPLY(FILE* f);
 	static VertexData* readOFF(FILE* f);
@@ -693,7 +970,7 @@ public:
 	static VertexData* readPLY(const void* mem);
 	static VertexData* readOFF(const void* mem);
 
-	static VertexData* readVD(FILE* f);
+
 	static bool writeVD(const VertexData* vd, FILE* f);
 
 	static bool writeOBJ(const VertexData* vd, FILE* f);
@@ -732,8 +1009,8 @@ public:
 	 */
 	static VertexData* readFromFile(const std::string& path, FileFormat f = FROM_PATH);
 
-	static bool recalculate_normals(VertexData* vd, AttributeID to_attribute=AttributeID::NORMAL);
-	static bool recalculate_tangents(VertexData* vd,AttributeID to_attribute=AttributeID::TANGENT);
+	static bool recalculate_normals(VertexData* vd, AttributeID to_attribute=ATTRIB_NORMAL);
+	static bool recalculate_tangents(VertexData* vd,AttributeID to_attribute=ATTRIB_TANGENT);
 
 	static VertexData* reconfigure(VertexData* data, const VertexConfiguration& new_config, bool null=false);
 

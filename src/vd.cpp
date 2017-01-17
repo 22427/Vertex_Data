@@ -2,12 +2,13 @@
 #include "vd.h"
 #include <fstream>
 #include <string>
-#include "string_utils.h"
 #include <cstdio>
 #include <cstdlib>
 #define GLM_FORCE_RADIANS
 #include <glm/gtx/norm.hpp>
 using namespace  glm;
+using namespace stru;
+using namespace typ;
 
 uint32_t Attribute::size() const
 {
@@ -533,6 +534,23 @@ Vertex::Vertex(const VertexConfiguration &c, void *b)
 		m_destroy_data = false;
 }
 
+Vertex::Vertex(const Vertex &o):m_data(nullptr),cfg(o.cfg)
+{
+	if(o.m_data)
+	{
+		m_data = static_cast<ubyte*>(malloc(cfg.vertex_size()));
+		memcpy(m_data,o.m_data,cfg.vertex_size());
+		m_destroy_data = true;
+	}
+}
+
+void Vertex::set_data(ubyte *d)
+{
+	if(m_data && m_destroy_data)
+		free(m_data);
+	m_data = d;
+}
+
 
 bool Vertex::getAttribute(const AttributeID id, vec4 &v) const
 {
@@ -597,6 +615,63 @@ bool Vertex::setAttribute(const AttributeID id, const float v) const
 {
 	const Attribute& a = cfg.get_attribute_by_id(id);
 	return a.write(m_data,v);
+}
+
+void *Vertex::get_attribute_ptr(const AttributeID id)
+{
+	if(cfg.has_attribute(id))
+		return static_cast<ubyte*>(m_data)+cfg.get_attribute_by_id(id).offset;
+	else
+		return nullptr;
+}
+
+bool Vertex::has_attribute(const AttributeID id) const
+{
+	return cfg.has_attribute(id);
+}
+
+bool Vertex::is_equal(const Vertex &o) const
+{
+	for(uint i = 0 ; i< cfg.attribute_count();i++)
+	{
+		const Attribute& a = cfg.get_attribute(i);
+		if(o.has_attribute(a.attribute_id))
+		{
+			vec4 me, you;
+			getAttribute(a.attribute_id,me);
+			o.getAttribute(a.attribute_id,you);
+
+			if(me!=you)
+				return false;
+		}
+	}
+	return  true;
+}
+
+bool Vertex::operator ==(const Vertex &o) const
+{
+	if(cfg != o.cfg)
+		return false;
+	return memcmp(m_data,o.m_data,cfg.vertex_size());
+}
+
+bool Vertex::operator !=(const Vertex &o) const
+{
+	return  !(*this==o);
+}
+
+bool Vertex::operator <(const Vertex &o) const
+{
+	const ubyte* a = static_cast<ubyte*>(m_data);
+	const ubyte* b = static_cast<ubyte*>(o.m_data);
+	for(uint i =0; i <cfg.vertex_size();i++)
+	{
+		if(a[i]<b[i])
+			return true;
+		if(a[i]>b[i])
+			return false;
+	}
+	return false;
 }
 
 
@@ -685,6 +760,38 @@ void VertexData::push_back(const uint32_t &i)
 	}
 
 	m_index_count++;
+}
+
+uint32_t VertexData::get_index(const uint32_t i) const
+{
+	assert(m_index_type.is_integer() && m_index_type.is_unsigned());
+
+	switch (m_index_type.id)
+	{
+	case UNSIGNED_BYTE: return static_cast<uint8_t* >(m_index_data)[i];
+	case UNSIGNED_SHORT:return static_cast<uint16_t*>(m_index_data)[i];
+	case UNSIGNED_INT:  return static_cast<uint32_t*>(m_index_data)[i];
+	case BYTE:case SHORT:case INT: case FLOAT: case DOUBLE: case INVALID:
+		return ~0u;
+	}
+	return  ~0u;
+}
+
+void VertexData::set_index(const uint32_t i, const uint32_t v)
+{
+	assert(m_index_type.is_integer() && m_index_type.is_unsigned());
+
+	switch (m_index_type.id)
+	{
+	case UNSIGNED_BYTE:  static_cast<uint8_t* >(m_index_data)[i] =
+				static_cast<uint8_t >(v);break;
+	case UNSIGNED_SHORT: static_cast<uint16_t*>(m_index_data)[i] =
+				static_cast<uint16_t>(v);break;
+	case UNSIGNED_INT:   static_cast<uint32_t*>(m_index_data)[i] =
+				static_cast<uint32_t>(v);break;
+	case BYTE:case SHORT:case INT: case FLOAT: case DOUBLE: case INVALID:
+		break;
+	}
 }
 
 uint VertexData::push_back(const Vertex &v)
@@ -805,15 +912,15 @@ VertexData *VertexDataTools::readOBJ(FILE* f)
 			{
 				if(!positions.empty())
 				{
-					cfg.add_attribute(Attribute(AttributeID::POSITION,3,FLOAT,false));
+					cfg.add_attribute(Attribute(AttributeID::ATTRIB_POSITION,3,FLOAT,false));
 				}
 				if(!tex_coords.empty())
 				{
-					cfg.add_attribute(Attribute(AttributeID::TEXCOORD,2,FLOAT,false));
+					cfg.add_attribute(Attribute(AttributeID::ATTRIB_TEXCOORD,2,FLOAT,false));
 				}
 				if(!normals.empty())
 				{
-					cfg.add_attribute(Attribute(AttributeID::NORMAL,3,FLOAT,false));
+					cfg.add_attribute(Attribute(AttributeID::ATTRIB_NORMAL,3,FLOAT,false));
 				}
 				configurated = true;
 				vd = new VertexData(TRIANGLES,cfg);
@@ -833,7 +940,7 @@ VertexData *VertexDataTools::readOBJ(FILE* f)
 					{
 
 						p_id  = atoiu(arg[i]) - 1;
-						v.setAttribute(AttributeID::POSITION,positions[p_id]);
+						v.setAttribute(AttributeID::ATTRIB_POSITION,positions[p_id]);
 						handle_v(vd,v_loc,v);
 					}
 				}
@@ -845,8 +952,8 @@ VertexData *VertexDataTools::readOBJ(FILE* f)
 						tkn.getTokenAs(p_id,"/");
 						tkn.getTokenAs(t_id,"/");
 
-						v.setAttribute(AttributeID::POSITION, positions[p_id-1]);
-						v.setAttribute(AttributeID::TEXCOORD, tex_coords[t_id-1]);
+						v.setAttribute(AttributeID::ATTRIB_POSITION, positions[p_id-1]);
+						v.setAttribute(AttributeID::ATTRIB_TEXCOORD, tex_coords[t_id-1]);
 						handle_v(vd,v_loc,v);
 					}
 				}
@@ -859,8 +966,8 @@ VertexData *VertexDataTools::readOBJ(FILE* f)
 						tkn.getToken('/');
 						tkn.getTokenAs(n_id,"/");
 
-						v.setAttribute(AttributeID::POSITION, positions[p_id-1]);
-						v.setAttribute(AttributeID::NORMAL, tex_coords[n_id-1]);
+						v.setAttribute(AttributeID::ATTRIB_POSITION, positions[p_id-1]);
+						v.setAttribute(AttributeID::ATTRIB_NORMAL, tex_coords[n_id-1]);
 						handle_v(vd,v_loc,v);
 					}
 				}
@@ -873,9 +980,9 @@ VertexData *VertexDataTools::readOBJ(FILE* f)
 						tkn.getTokenAs(t_id,"/");
 						tkn.getTokenAs(n_id,"/");
 
-						v.setAttribute(AttributeID::POSITION, positions[p_id-1]);
-						v.setAttribute(AttributeID::TEXCOORD, tex_coords[t_id-1]);
-						v.setAttribute(AttributeID::NORMAL, normals[n_id-1]);
+						v.setAttribute(AttributeID::ATTRIB_POSITION, positions[p_id-1]);
+						v.setAttribute(AttributeID::ATTRIB_TEXCOORD, tex_coords[t_id-1]);
+						v.setAttribute(AttributeID::ATTRIB_NORMAL, normals[n_id-1]);
 
 						handle_v(vd,v_loc,v);
 					}
@@ -1154,8 +1261,8 @@ VertexData *VertexDataTools::readPLY(FILE* f)
 	uint32_t i = 0 ;
 
 
-	Attribute aa[UDEF_0];
-	for(uint32_t i= 0 ; i< UDEF_0;i++)
+	Attribute aa[ATTRIB_COUNT];
+	for(uint32_t i= 0 ; i< ATTRIB_COUNT;i++)
 	{
 		aa[i].type = INVALID;
 		aa[i].attribute_id = static_cast<AttributeID>(i);
@@ -1166,13 +1273,13 @@ VertexData *VertexDataTools::readPLY(FILE* f)
 	{
 		Attribute* a = nullptr;
 		if((p[0] == 'x' ||p[0] == 'y' ||p[0] == 'z' ))
-			a= &(aa[POSITION]);
+			a= &(aa[ATTRIB_POSITION]);
 		else if(p[0] == 'r'||p[0] == 'g'||p[0] == 'b'||p[0] == 'a')
-			a= &(aa[COLOR]);
+			a= &(aa[ATTRIB_COLOR]);
 		else if((p[0] == 'n'))
-			a= &(aa[NORMAL]);
+			a= &(aa[ATTRIB_NORMAL]);
 		else if(p[0] == 's'||p[0] == 't'||p[0] == 'p')
-			a= &(aa[TEXCOORD]);
+			a= &(aa[ATTRIB_TEXCOORD]);
 
 		if(p[0] == 'x' || p[0] == 'r' || p[1] == 'x' || p[0] == 's')
 			a->elements = 1;
@@ -1191,7 +1298,7 @@ VertexData *VertexDataTools::readPLY(FILE* f)
 
 		i++;
 	}
-	for(uint32_t i= 0 ; i< UDEF_0;i++)
+	for(uint32_t i= 0 ; i< ATTRIB_COUNT;i++)
 	{
 		if(aa[i].type != INVALID)
 			cfg.add_attribute(aa[i]);
@@ -1217,10 +1324,10 @@ VertexData *VertexDataTools::readPLY(FILE* f)
 		{
 			switch (p.a)
 			{
-				case POSITION: r = &pos[p.c]; break;
-				case NORMAL: r = &nrm[p.c]; break;
-				case COLOR: r = &clr[p.c]; break;
-				case TEXCOORD: r = &tex[p.c]; break;
+				case ATTRIB_POSITION: r = &pos[p.c]; break;
+				case ATTRIB_NORMAL: r = &nrm[p.c]; break;
+				case ATTRIB_COLOR: r = &clr[p.c]; break;
+				case ATTRIB_TEXCOORD: r = &tex[p.c]; break;
 				default: continue;
 			}
 
@@ -1230,10 +1337,10 @@ VertexData *VertexDataTools::readPLY(FILE* f)
 				*r= static_cast<float>(static_cast<double>(*r)/p.t.max());
 		}
 
-		vtx.setAttribute(POSITION,pos);
-		vtx.setAttribute(NORMAL,nrm);
-		vtx.setAttribute(COLOR,clr);
-		vtx.setAttribute(TEXCOORD,tex);
+		vtx.setAttribute(ATTRIB_POSITION,pos);
+		vtx.setAttribute(ATTRIB_NORMAL,nrm);
+		vtx.setAttribute(ATTRIB_COLOR,clr);
+		vtx.setAttribute(ATTRIB_TEXCOORD,tex);
 		vd->push_back(vtx);
 	}
 	// read the faces
@@ -1446,7 +1553,7 @@ bool VertexDataTools::writeOBJ(const VertexData *vd, FILE* f)
 		for (uint j = 0; j < vs; j++)
 		{
 			const Vertex& vtx = vd->get_vertex(v[j]);
-			if(vtx.getAttribute(AttributeID::POSITION,pos))
+			if(vtx.getAttribute(AttributeID::ATTRIB_POSITION,pos))
 			{
 				if(pos2id.find(pos) == pos2id.end())
 				{
@@ -1466,7 +1573,7 @@ bool VertexDataTools::writeOBJ(const VertexData *vd, FILE* f)
 			}
 
 
-			if(vtx.getAttribute(AttributeID::NORMAL,nrm))
+			if(vtx.getAttribute(AttributeID::ATTRIB_NORMAL,nrm))
 			{
 				if(nrm2id.find(nrm) == nrm2id.end())
 				{
@@ -1486,7 +1593,7 @@ bool VertexDataTools::writeOBJ(const VertexData *vd, FILE* f)
 			}
 
 
-			if(vtx.getAttribute(AttributeID::TEXCOORD,tex))
+			if(vtx.getAttribute(AttributeID::ATTRIB_TEXCOORD,tex))
 			{
 				if(tex2id.find(tex) == tex2id.end())
 				{
@@ -1557,7 +1664,7 @@ bool VertexDataTools::writeOFF(const VertexData *vd, FILE* f)
 	for(const Vertex& vtx : *vd)
 	{
 		vec3 v;
-		vtx.getAttribute(AttributeID::POSITION,v);
+		vtx.getAttribute(AttributeID::ATTRIB_POSITION,v);
 		fprintf(f,"%f %f %f\n",v.x,v.y,v.z);
 	}
 
@@ -1688,7 +1795,7 @@ bool VertexDataTools::recalculate_normals(VertexData *vd, AttributeID to_attribu
 			{
 				for (uint j = 0; j < vs; j++)
 				{
-					vd->get_vertex(vd->get_index(i+j)).getAttribute(AttributeID::POSITION,v[j]);
+					vd->get_vertex(vd->get_index(i+j)).getAttribute(AttributeID::ATTRIB_POSITION,v[j]);
 					//v[j] = &(verts.at(indices[i+j]).pos());
 				}
 			}
@@ -1697,7 +1804,7 @@ bool VertexDataTools::recalculate_normals(VertexData *vd, AttributeID to_attribu
 				for (uint j = 0; j < vs; j++)
 				{
 					const uint idx = j==0? 1 : j==1? 0:j;
-					vd->get_vertex(vd->get_index(i+idx)).getAttribute(AttributeID::POSITION,v[j]);
+					vd->get_vertex(vd->get_index(i+idx)).getAttribute(AttributeID::ATTRIB_POSITION,v[j]);
 					//					v[j] = &(verts.at(indices[i+idx]).pos());
 				}
 			}
@@ -1761,7 +1868,7 @@ bool VertexDataTools::recalculate_normals(VertexData *vd, AttributeID to_attribu
 		vec3 pos;
 		for (Vertex& v : *(vd))
 		{
-			v.getAttribute(AttributeID::POSITION,pos);
+			v.getAttribute(AttributeID::ATTRIB_POSITION,pos);
 			v.setAttribute(to_attribute,p2n[pos]);
 		}
 	}
@@ -1786,8 +1893,8 @@ bool VertexDataTools::recalculate_tangents(VertexData *vd, AttributeID to_attrib
 		for(uint j = 0 ; j< 3;j++)
 		{
 			auto vtx = vd->get_vertex(vd->get_index(i + j));
-			vtx.getAttribute(AttributeID::POSITION,v[j]);
-			vtx.getAttribute(AttributeID::TEXCOORD,uv[j]);
+			vtx.getAttribute(AttributeID::ATTRIB_POSITION,v[j]);
+			vtx.getAttribute(AttributeID::ATTRIB_TEXCOORD,uv[j]);
 
 		}
 
@@ -1845,4 +1952,105 @@ VertexData *VertexDataTools::reconfigure(VertexData *data, const VertexConfigura
 }
 
 
+namespace stru
+{
+Tokenizer::Tokenizer(const std::string& base)
+{
+	this->m_base = new char[base.length() + 1];
+	memcpy(this->m_base, base.data(), base.length() + 1);
+	this->m_rest = this->m_base;
+}
 
+Tokenizer::Tokenizer(char *base)
+{
+	m_base = m_rest = base;
+}
+
+Tokenizer::~Tokenizer()
+{
+	if(m_base)
+		delete[] m_base;
+}
+
+
+char* Tokenizer::getToken(char separator)
+{
+	char* to_ret = m_rest;
+
+	if (*m_rest == 0)
+		return nullptr;
+
+	while (*m_rest && *m_rest != separator)
+	{
+		m_rest++;
+	}
+
+	while (*m_rest && *m_rest == separator)
+	{
+		*m_rest =0;
+		m_rest++;
+	}
+	return to_ret;
+}
+
+bool contains(const std::string& str, const char c)
+{
+	for(const auto& cc : str)
+	{
+		if(cc == c)
+		{
+			return true;
+		}
+	}
+	return false;
+}
+char* Tokenizer::getToken(const std::string& separators, char* sep)
+{
+	char* to_ret = m_rest;
+
+	if (*m_rest == 0)
+		return nullptr;
+
+	while (*m_rest && !contains(separators,*m_rest))
+	{
+		m_rest++;
+	}
+
+	if(sep)
+		*sep = *m_rest;
+
+	while (*m_rest && contains(separators,*m_rest))
+	{
+		*m_rest = 0;
+		m_rest++;
+	}
+
+	return to_ret;
+}
+
+
+void Tokenizer::skipOverAll(const std::string& seps)
+{
+	while(*m_rest && contains(seps,*m_rest))
+	{
+		m_rest++;
+	}
+}
+void Tokenizer::skipWhiteSpaces()
+{
+	while(*m_rest && isspace(*m_rest))
+		m_rest++;
+}
+
+
+void Tokenizer::reset(const std::string& base)
+{
+	delete[] this->m_base;
+	this->m_base = new char[base.length() + 1];
+	memcpy(this->m_base, base.data(), base.length() + 1);
+	this->m_rest = this->m_base;
+}
+
+
+std::string Tokenizer::whitespaces = " \t\n\v\f\r";
+}
