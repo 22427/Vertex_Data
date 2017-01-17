@@ -1,12 +1,10 @@
 #include <cstdio>
 #include <cstdint>
-
 #include <algorithm>
 #include <assert.h>
 
-
-
 #include "vd.h"
+
 int main(int argc, char ** argv)
 {
 	if(argc < 3)

@@ -36,45 +36,49 @@ Attribute::Attribute(const AttributeID id, const uint32_t elements, const Type t
 bool Attribute::read(const void *zero, vec4 &res) const
 {
 	res = vec4(0.0f,0.0f,0.0f,1.0f);
+	if(use_constant)
+		zero = constant;
 	zero = reinterpret_cast<const ubyte*>(zero)+ offset;
+
+
 	const int elems = static_cast<int>(elements);
 	if(type == BYTE)
 	{
 		const byte* v = reinterpret_cast<const byte*>(zero);
 		for(int i = 0 ; i<elems;i++)
-			res[i] = normalized? int_to_float(v[i]): v[i];
+			res[i] = normalized? nint_to_float(v[i]): v[i];
 	}
 	else if( type == UNSIGNED_BYTE )
 	{
 		const ubyte* v = reinterpret_cast<const ubyte*>(zero) + offset;
 		for(int i = 0 ; i<elems;i++)
-			res[i] = normalized? int_to_float(v[i]): v[i];
+			res[i] = normalized? nint_to_float(v[i]): v[i];
 	}
 
 	else if(type == SHORT)
 	{
 		const int16_t* v = reinterpret_cast<const int16_t*>(zero);
 		for(int i = 0 ; i<elems;i++)
-			res[i] = normalized? int_to_float(v[i]): v[i];
+			res[i] = normalized? nint_to_float(v[i]): v[i];
 	}
 	else if(type == UNSIGNED_SHORT )
 	{
 		const uint16_t* v = reinterpret_cast<const uint16_t*>(zero);
 		for(int i = 0 ; i<elems;i++)
-			res[i] = normalized? int_to_float(v[i]): v[i];
+			res[i] = normalized? nint_to_float(v[i]): v[i];
 	}
 
 	else if(type == INT)
 	{
 		const int32_t* v = reinterpret_cast<const int32_t*>(zero);
 		for(int i = 0 ; i<elems;i++)
-			res[i] = normalized? int_to_float(v[i]): v[i];
+			res[i] = normalized? nint_to_float(v[i]): v[i];
 	}
 	else if( type == UNSIGNED_INT )
 	{
 		const uint32_t* v = reinterpret_cast<const uint32_t*>(zero);
 		for(int i = 0 ; i<elems;i++)
-			res[i] = normalized? int_to_float(v[i]): v[i];
+			res[i] = normalized? nint_to_float(v[i]): v[i];
 	}
 
 	else if(type == FLOAT)
@@ -99,45 +103,47 @@ bool Attribute::read(const void *zero, vec4 &res) const
 bool Attribute::read(const void *zero, vec3 &res) const
 {
 	res = vec3(0.0f,0.0f,0.0f);
+	if(use_constant)
+		zero = constant;
 	zero = reinterpret_cast<const ubyte*>(zero)+ offset;
 	const int elems = static_cast<int>(elements);
 	if(type == BYTE)
 	{
 		const byte* v = reinterpret_cast<const byte*>(zero);
 		for(int i = 0 ; i<elems && i<3;i++)
-			res[i] = normalized? int_to_float(v[i]): v[i];
+			res[i] = normalized? nint_to_float(v[i]): v[i];
 	}
 	else if(type == UNSIGNED_BYTE )
 	{
 		const ubyte* v = reinterpret_cast<const ubyte*>(zero) + offset;
 		for(int i = 0 ; i<elems && i<3;i++)
-			res[i] = normalized? int_to_float(v[i]): v[i];
+			res[i] = normalized? nint_to_float(v[i]): v[i];
 	}
 
 	else if(type == SHORT)
 	{
 		const int16_t* v = reinterpret_cast<const int16_t*>(zero);
 		for(int i = 0 ; i<elems && i<3;i++)
-			res[i] = normalized? int_to_float(v[i]): v[i];
+			res[i] = normalized? nint_to_float(v[i]): v[i];
 	}
 	else if(type == UNSIGNED_SHORT )
 	{
 		const uint16_t* v = reinterpret_cast<const uint16_t*>(zero);
 		for(int i = 0 ; i<elems && i<3;i++)
-			res[i] = normalized? int_to_float(v[i]): v[i];
+			res[i] = normalized? nint_to_float(v[i]): v[i];
 	}
 
 	else if(type == INT)
 	{
 		const int32_t* v = reinterpret_cast<const int32_t*>(zero);
 		for(int i = 0 ; i<elems && i<3;i++)
-			res[i] = normalized? int_to_float(v[i]): v[i];
+			res[i] = normalized? nint_to_float(v[i]): v[i];
 	}
 	else if(type == UNSIGNED_INT )
 	{
 		const uint32_t* v = reinterpret_cast<const uint32_t*>(zero);
 		for(int i = 0 ; i<elems && i<3;i++)
-			res[i] = normalized? int_to_float(v[i]): v[i];
+			res[i] = normalized? nint_to_float(v[i]): v[i];
 	}
 
 	else if(type == FLOAT)
@@ -162,45 +168,47 @@ bool Attribute::read(const void *zero, vec3 &res) const
 bool Attribute::read(const void *zero, vec2 &res) const
 {
 	res = vec2(0.0f,0.0f);
+	if(use_constant)
+		zero = constant;
 	zero = reinterpret_cast<const ubyte*>(zero)+ offset;
 	const int elems = static_cast<int>(elements);
 	if(type == BYTE)
 	{
 		const byte* v = reinterpret_cast<const byte*>(zero);
 		for(int i = 0 ; i<elems && i<2;i++)
-			res[i] = normalized? int_to_float(v[i]): v[i];
+			res[i] = normalized? nint_to_float(v[i]): v[i];
 	}
 	else if(type == UNSIGNED_BYTE )
 	{
 		const ubyte* v = reinterpret_cast<const ubyte*>(zero);
 		for(int i = 0 ; i<elems && i<2;i++)
-			res[i] = normalized? int_to_float(v[i]): v[i];
+			res[i] = normalized? nint_to_float(v[i]): v[i];
 	}
 
 	else if(type == SHORT)
 	{
 		const int16_t* v = reinterpret_cast<const int16_t*>(zero);
 		for(int i = 0 ; i<elems && i<2;i++)
-			res[i] = normalized? int_to_float(v[i]): v[i];
+			res[i] = normalized? nint_to_float(v[i]): v[i];
 	}
 	else if(type == UNSIGNED_SHORT )
 	{
 		const uint16_t* v = reinterpret_cast<const uint16_t*>(zero);
 		for(int i = 0 ; i<elems && i<2;i++)
-			res[i] = normalized? int_to_float(v[i]): v[i];
+			res[i] = normalized? nint_to_float(v[i]): v[i];
 	}
 
 	else if(type == INT)
 	{
 		const int32_t* v = static_cast<const int32_t*>(zero);
 		for(int i = 0 ; i<elems && i<2;i++)
-			res[i] = normalized? int_to_float(v[i]): v[i];
+			res[i] = normalized? nint_to_float(v[i]): v[i];
 	}
 	else if(type == UNSIGNED_INT )
 	{
 		const uint32_t* v = static_cast<const uint32_t*>(zero);
 		for(int i = 0 ; i<elems && i<2;i++)
-			res[i] = normalized? int_to_float(v[i]): v[i];
+			res[i] = normalized? nint_to_float(v[i]): v[i];
 	}
 
 	else if(type == FLOAT)
@@ -225,39 +233,41 @@ bool Attribute::read(const void *zero, vec2 &res) const
 bool Attribute::read(const void *zero, float &res) const
 {
 	res = 0.0f;
+	if(use_constant)
+		zero = constant;
 	zero = static_cast<const ubyte*>(zero)+ offset;
 
 	if(type == BYTE)
 	{
 		const byte* v = static_cast<const byte*>(zero);
-		res = normalized? int_to_float(*v): *v;
+		res = normalized? nint_to_float(*v): *v;
 	}
 	else if(type == UNSIGNED_BYTE )
 	{
 		const ubyte* v = static_cast<const ubyte*>(zero) + offset;
-		res = normalized? int_to_float(*v): *v;
+		res = normalized? nint_to_float(*v): *v;
 	}
 
 	else if(type == SHORT)
 	{
 		const int16_t* v = static_cast<const int16_t*>(zero);
-		res = normalized? int_to_float(*v): *v;
+		res = normalized? nint_to_float(*v): *v;
 	}
 	else if(type == UNSIGNED_SHORT )
 	{
 		const uint16_t* v = static_cast<const uint16_t*>(zero);
-		res = normalized? int_to_float(*v): *v;
+		res = normalized? nint_to_float(*v): *v;
 	}
 
 	else if(type == INT)
 	{
 		const int32_t* v = static_cast<const int32_t*>(zero);
-		res = normalized? int_to_float(*v): *v;
+		res = normalized? nint_to_float(*v): *v;
 	}
 	else if(type == UNSIGNED_INT )
 	{
 		const uint32_t* v = static_cast<const uint32_t*>(zero);
-		res = normalized? int_to_float(*v): *v;
+		res = normalized? nint_to_float(*v): *v;
 	}
 
 	else if(type == FLOAT)
@@ -280,45 +290,47 @@ bool Attribute::read(const void *zero, float &res) const
 
 bool Attribute::write(void *zero, const vec4 &v) const
 {
+	if(use_constant)
+		return false;
 	zero = static_cast<ubyte*>(zero)+ offset;
 	const int elems = static_cast<int>(elements);
 	if(type == BYTE)
 	{
 		int8_t* z = static_cast<int8_t*>(zero);
 		for(int i = 0 ; i<elems;i++)
-			z[i] = static_cast<int8_t>(normalized? float_to_int<int8_t>(v[i]) : v[i]);
+			z[i] = static_cast<int8_t>(normalized? float_to_nint<int8_t>(v[i]) : v[i]);
 	}
 	else if(type == UNSIGNED_BYTE )
 	{
 		uint8_t* z = static_cast<uint8_t*>(zero);
 		for(int i = 0 ; i<elems;i++)
-			z[i] = static_cast<uint8_t>(normalized? float_to_int<uint8_t>(v[i]): v[i]);
+			z[i] = static_cast<uint8_t>(normalized? float_to_nint<uint8_t>(v[i]): v[i]);
 	}
 
 	else if(type == SHORT)
 	{
 		int16_t* z = static_cast<int16_t*>(zero);
 		for(int i = 0 ; i<elems;i++)
-			z[i] = static_cast<int16_t>(normalized? float_to_int<int16_t>(v[i]) : v[i]);
+			z[i] = static_cast<int16_t>(normalized? float_to_nint<int16_t>(v[i]) : v[i]);
 	}
 	else if(type == UNSIGNED_SHORT )
 	{
 		uint16_t* z = static_cast<uint16_t*>(zero);
 		for(int i = 0 ; i<elems;i++)
-			z[i] = static_cast<uint16_t>(normalized? float_to_int<uint16_t>(v[i]) : v[i]);
+			z[i] = static_cast<uint16_t>(normalized? float_to_nint<uint16_t>(v[i]) : v[i]);
 	}
 
 	else if(type == INT)
 	{
 		int32_t* z = static_cast<int32_t*>(zero);
 		for(int i = 0 ; i<elems;i++)
-			z[i] = static_cast<int32_t>(normalized? float_to_int<int32_t>(v[i]) : v[i]);
+			z[i] = static_cast<int32_t>(normalized? float_to_nint<int32_t>(v[i]) : v[i]);
 	}
 	else if(type == UNSIGNED_INT )
 	{
 		uint32_t* z = static_cast<uint32_t*>(zero);
 		for(int i = 0 ; i<elems;i++)
-			z[i] = static_cast<uint32_t>(normalized? float_to_int<uint32_t>(v[i]) : v[i]);
+			z[i] = static_cast<uint32_t>(normalized? float_to_nint<uint32_t>(v[i]) : v[i]);
 	}
 
 	else if(type == FLOAT)
@@ -341,45 +353,47 @@ bool Attribute::write(void *zero, const vec4 &v) const
 
 bool Attribute::write(void *zero, const vec3 &v) const
 {
+	if(use_constant)
+		return false;
 	zero = static_cast<ubyte*>(zero)+ offset;
 	const int elems = static_cast<int>(elements);
 	if(type == BYTE)
 	{
 		int8_t* z = static_cast<int8_t*>(zero);
 		for(int i = 0 ; i<elems && i<3;i++)
-			z[i] = static_cast<int8_t>(normalized? float_to_int<int8_t>(v[i]) : v[i]);
+			z[i] = static_cast<int8_t>(normalized? float_to_nint<int8_t>(v[i]) : v[i]);
 	}
 	else if(type == UNSIGNED_BYTE )
 	{
 		uint8_t* z = static_cast<uint8_t*>(zero);
 		for(int i = 0 ; i<elems && i<3;i++)
-			z[i] = static_cast<uint8_t>(normalized? float_to_int<uint8_t>(v[i]): v[i]);
+			z[i] = static_cast<uint8_t>(normalized? float_to_nint<uint8_t>(v[i]): v[i]);
 	}
 
 	else if(type == SHORT)
 	{
 		int16_t* z = static_cast<int16_t*>(zero);
 		for(int i = 0 ; i<elems && i<3;i++)
-			z[i] = static_cast<int16_t>(normalized? float_to_int<int16_t>(v[i]) : v[i]);
+			z[i] = static_cast<int16_t>(normalized? float_to_nint<int16_t>(v[i]) : v[i]);
 	}
 	else if(type == UNSIGNED_SHORT )
 	{
 		uint16_t* z = static_cast<uint16_t*>(zero);
 		for(int i = 0 ; i<elems && i<3;i++)
-			z[i] = static_cast<uint16_t>(normalized? float_to_int<uint16_t>(v[i]) : v[i]);
+			z[i] = static_cast<uint16_t>(normalized? float_to_nint<uint16_t>(v[i]) : v[i]);
 	}
 
 	else if(type == INT)
 	{
 		int32_t* z = static_cast<int32_t*>(zero);
 		for(int i = 0 ; i<elems && i<3;i++)
-			z[i] = static_cast<int32_t>(normalized? float_to_int<int32_t>(v[i]) : v[i]);
+			z[i] = static_cast<int32_t>(normalized? float_to_nint<int32_t>(v[i]) : v[i]);
 	}
 	else if(type == UNSIGNED_INT )
 	{
 		uint32_t* z = static_cast<uint32_t*>(zero);
 		for(int i = 0 ; i<elems && i<3;i++)
-			z[i] = static_cast<uint32_t>(normalized? float_to_int<uint32_t>(v[i]) : v[i]);
+			z[i] = static_cast<uint32_t>(normalized? float_to_nint<uint32_t>(v[i]) : v[i]);
 	}
 
 	else if(type == FLOAT)
@@ -402,45 +416,47 @@ bool Attribute::write(void *zero, const vec3 &v) const
 
 bool Attribute::write(void *zero, const vec2 &v) const
 {
+	if(use_constant)
+		return false;
 	zero = static_cast<ubyte*>(zero)+ offset;
 	const int elems = static_cast<int>(elements);
 	if(type == BYTE)
 	{
 		int8_t* z = static_cast<int8_t*>(zero);
 		for(int i = 0 ; i<elems && i<2;i++)
-			z[i] = static_cast<int8_t>(normalized? float_to_int<int8_t>(v[i]) : v[i]);
+			z[i] = static_cast<int8_t>(normalized? float_to_nint<int8_t>(v[i]) : v[i]);
 	}
 	else if(type == UNSIGNED_BYTE )
 	{
 		uint8_t* z = static_cast<uint8_t*>(zero);
 		for(int i = 0 ; i<elems && i<2;i++)
-			z[i] = static_cast<uint8_t>(normalized? float_to_int<uint8_t>(v[i]): v[i]);
+			z[i] = static_cast<uint8_t>(normalized? float_to_nint<uint8_t>(v[i]): v[i]);
 	}
 
 	else if(type == SHORT)
 	{
 		int16_t* z = static_cast<int16_t*>(zero);
 		for(int i = 0 ; i<elems && i<2;i++)
-			z[i] = static_cast<int16_t>(normalized? float_to_int<int16_t>(v[i]) : v[i]);
+			z[i] = static_cast<int16_t>(normalized? float_to_nint<int16_t>(v[i]) : v[i]);
 	}
 	else if(type == UNSIGNED_SHORT )
 	{
 		uint16_t* z = static_cast<uint16_t*>(zero);
 		for(int i = 0 ; i<elems && i<2;i++)
-			z[i] = static_cast<uint16_t>(normalized? float_to_int<uint16_t>(v[i]) : v[i]);
+			z[i] = static_cast<uint16_t>(normalized? float_to_nint<uint16_t>(v[i]) : v[i]);
 	}
 
 	else if(type == INT)
 	{
 		int32_t* z = static_cast<int32_t*>(zero);
 		for(int i = 0 ; i<elems && i<2;i++)
-			z[i] = static_cast<int32_t>(normalized? float_to_int<int32_t>(v[i]) : v[i]);
+			z[i] = static_cast<int32_t>(normalized? float_to_nint<int32_t>(v[i]) : v[i]);
 	}
 	else if(type == UNSIGNED_INT )
 	{
 		uint32_t* z = static_cast<uint32_t*>(zero);
 		for(int i = 0 ; i<elems && i<2;i++)
-			z[i] = static_cast<uint32_t>(normalized? float_to_int<uint32_t>(v[i]) : v[i]);
+			z[i] = static_cast<uint32_t>(normalized? float_to_nint<uint32_t>(v[i]) : v[i]);
 	}
 
 	else if(type == FLOAT)
@@ -463,45 +479,47 @@ bool Attribute::write(void *zero, const vec2 &v) const
 
 bool Attribute::write(void *zero, const float v) const
 {
+	if(use_constant)
+		return false;
 	zero = static_cast<ubyte*>(zero)+ offset;
 
 	if(type == BYTE)
 	{
 		int8_t* z = static_cast<int8_t*>(zero);
 
-		*z = static_cast<int8_t>(normalized? float_to_int<int8_t>(v) : v);
+		*z = static_cast<int8_t>(normalized? float_to_nint<int8_t>(v) : v);
 	}
 	else if( type == UNSIGNED_BYTE )
 	{
 		uint8_t* z = static_cast<uint8_t*>(zero);
 
-		*z = static_cast<uint8_t>(normalized? float_to_int<uint8_t>(v): v);
+		*z = static_cast<uint8_t>(normalized? float_to_nint<uint8_t>(v): v);
 	}
 
 	else if(type == SHORT)
 	{
 		int16_t* z = static_cast<int16_t*>(zero);
 
-		*z = static_cast<int16_t>(normalized? float_to_int<int16_t>(v) : v);
+		*z = static_cast<int16_t>(normalized? float_to_nint<int16_t>(v) : v);
 	}
 	else if( type == UNSIGNED_SHORT )
 	{
 		uint16_t* z = static_cast<uint16_t*>(zero);
 
-		*z = static_cast<uint16_t>(normalized? float_to_int<uint16_t>(v) : v);
+		*z = static_cast<uint16_t>(normalized? float_to_nint<uint16_t>(v) : v);
 	}
 
 	else if(type == INT)
 	{
 		int32_t* z = static_cast<int32_t*>(zero);
 
-		*z = static_cast<int32_t>(normalized? float_to_int<int32_t>(v) : v);
+		*z = static_cast<int32_t>(normalized? float_to_nint<int32_t>(v) : v);
 	}
 	else if( type == UNSIGNED_INT )
 	{
 		uint32_t* z = static_cast<uint32_t*>(zero);
 
-		*z = static_cast<uint32_t>(normalized? float_to_int<uint32_t>(v) : v);
+		*z = static_cast<uint32_t>(normalized? float_to_nint<uint32_t>(v) : v);
 	}
 
 	else if(type == FLOAT)
@@ -521,6 +539,254 @@ bool Attribute::write(void *zero, const float v) const
 
 	return true;
 }
+
+
+
+bool Attribute::write_constant(const vec4 &v)
+{
+	void* zero = static_cast<ubyte*>(constant);
+	const int elems = static_cast<int>(elements);
+	if(type == BYTE)
+	{
+		int8_t* z = static_cast<int8_t*>(zero);
+		for(int i = 0 ; i<elems;i++)
+			z[i] = static_cast<int8_t>(normalized? float_to_nint<int8_t>(v[i]) : v[i]);
+	}
+	else if(type == UNSIGNED_BYTE )
+	{
+		uint8_t* z = static_cast<uint8_t*>(zero);
+		for(int i = 0 ; i<elems;i++)
+			z[i] = static_cast<uint8_t>(normalized? float_to_nint<uint8_t>(v[i]): v[i]);
+	}
+
+	else if(type == SHORT)
+	{
+		int16_t* z = static_cast<int16_t*>(zero);
+		for(int i = 0 ; i<elems;i++)
+			z[i] = static_cast<int16_t>(normalized? float_to_nint<int16_t>(v[i]) : v[i]);
+	}
+	else if(type == UNSIGNED_SHORT )
+	{
+		uint16_t* z = static_cast<uint16_t*>(zero);
+		for(int i = 0 ; i<elems;i++)
+			z[i] = static_cast<uint16_t>(normalized? float_to_nint<uint16_t>(v[i]) : v[i]);
+	}
+
+	else if(type == INT)
+	{
+		int32_t* z = static_cast<int32_t*>(zero);
+		for(int i = 0 ; i<elems;i++)
+			z[i] = static_cast<int32_t>(normalized? float_to_nint<int32_t>(v[i]) : v[i]);
+	}
+	else if(type == UNSIGNED_INT )
+	{
+		uint32_t* z = static_cast<uint32_t*>(zero);
+		for(int i = 0 ; i<elems;i++)
+			z[i] = static_cast<uint32_t>(normalized? float_to_nint<uint32_t>(v[i]) : v[i]);
+	}
+
+	else if(type == FLOAT)
+	{
+		float* z = static_cast<float*>(zero);
+		for(int i = 0 ; i<elems;i++)
+			z[i] =  v[i];
+	}
+	else if(type == DOUBLE )
+	{
+		double* z = static_cast<double*>(zero);
+		for(int i = 0 ; i<elems;i++)
+			z[i] = static_cast<double>(v[i]);
+	}
+	else
+		return false;
+
+	return true;
+}
+
+bool Attribute::write_constant(const vec3 &v)
+{
+	void* zero = static_cast<ubyte*>(constant);
+	const int elems = static_cast<int>(elements);
+
+	if(type == BYTE)
+	{
+		int8_t* z = static_cast<int8_t*>(zero);
+		for(int i = 0 ; i<elems && i<3;i++)
+			z[i] = static_cast<int8_t>(normalized? float_to_nint<int8_t>(v[i]) : v[i]);
+	}
+	else if(type == UNSIGNED_BYTE )
+	{
+		uint8_t* z = static_cast<uint8_t*>(zero);
+		for(int i = 0 ; i<elems && i<3;i++)
+			z[i] = static_cast<uint8_t>(normalized? float_to_nint<uint8_t>(v[i]): v[i]);
+	}
+
+	else if(type == SHORT)
+	{
+		int16_t* z = static_cast<int16_t*>(zero);
+		for(int i = 0 ; i<elems && i<3;i++)
+			z[i] = static_cast<int16_t>(normalized? float_to_nint<int16_t>(v[i]) : v[i]);
+	}
+	else if(type == UNSIGNED_SHORT )
+	{
+		uint16_t* z = static_cast<uint16_t*>(zero);
+		for(int i = 0 ; i<elems && i<3;i++)
+			z[i] = static_cast<uint16_t>(normalized? float_to_nint<uint16_t>(v[i]) : v[i]);
+	}
+
+	else if(type == INT)
+	{
+		int32_t* z = static_cast<int32_t*>(zero);
+		for(int i = 0 ; i<elems && i<3;i++)
+			z[i] = static_cast<int32_t>(normalized? float_to_nint<int32_t>(v[i]) : v[i]);
+	}
+	else if(type == UNSIGNED_INT )
+	{
+		uint32_t* z = static_cast<uint32_t*>(zero);
+		for(int i = 0 ; i<elems && i<3;i++)
+			z[i] = static_cast<uint32_t>(normalized? float_to_nint<uint32_t>(v[i]) : v[i]);
+	}
+
+	else if(type == FLOAT)
+	{
+		float* z = static_cast<float*>(zero);
+		for(int i = 0 ; i<elems && i<3;i++)
+			z[i] =  v[i];
+	}
+	else if(type == DOUBLE )
+	{
+		double* z = static_cast<double*>(zero);
+		for(int i = 0 ; i<elems && i<3;i++)
+			z[i] = static_cast<double>(v[i]);
+	}
+	else
+		return false;
+
+	return true;
+}
+
+bool Attribute::write_constant(const vec2 &v)
+{
+	void* zero = static_cast<ubyte*>(constant);
+	const int elems = static_cast<int>(elements);
+
+	if(type == BYTE)
+	{
+		int8_t* z = static_cast<int8_t*>(zero);
+		for(int i = 0 ; i<elems && i<2;i++)
+			z[i] = static_cast<int8_t>(normalized? float_to_nint<int8_t>(v[i]) : v[i]);
+	}
+	else if(type == UNSIGNED_BYTE )
+	{
+		uint8_t* z = static_cast<uint8_t*>(zero);
+		for(int i = 0 ; i<elems && i<2;i++)
+			z[i] = static_cast<uint8_t>(normalized? float_to_nint<uint8_t>(v[i]): v[i]);
+	}
+
+	else if(type == SHORT)
+	{
+		int16_t* z = static_cast<int16_t*>(zero);
+		for(int i = 0 ; i<elems && i<2;i++)
+			z[i] = static_cast<int16_t>(normalized? float_to_nint<int16_t>(v[i]) : v[i]);
+	}
+	else if(type == UNSIGNED_SHORT )
+	{
+		uint16_t* z = static_cast<uint16_t*>(zero);
+		for(int i = 0 ; i<elems && i<2;i++)
+			z[i] = static_cast<uint16_t>(normalized? float_to_nint<uint16_t>(v[i]) : v[i]);
+	}
+
+	else if(type == INT)
+	{
+		int32_t* z = static_cast<int32_t*>(zero);
+		for(int i = 0 ; i<elems && i<2;i++)
+			z[i] = static_cast<int32_t>(normalized? float_to_nint<int32_t>(v[i]) : v[i]);
+	}
+	else if(type == UNSIGNED_INT )
+	{
+		uint32_t* z = static_cast<uint32_t*>(zero);
+		for(int i = 0 ; i<elems && i<2;i++)
+			z[i] = static_cast<uint32_t>(normalized? float_to_nint<uint32_t>(v[i]) : v[i]);
+	}
+
+	else if(type == FLOAT)
+	{
+		float* z = static_cast<float*>(zero);
+		for(int i = 0 ; i<elems && i<2;i++)
+			z[i] =  v[i];
+	}
+	else if(type == DOUBLE )
+	{
+		double* z = static_cast<double*>(zero);
+		for(int i = 0 ; i<elems && i<2;i++)
+			z[i] = static_cast<double>(v[i]);
+	}
+	else
+		return false;
+
+	return true;
+}
+
+bool Attribute::write_constant(const float v)
+{
+	void* zero = static_cast<ubyte*>(constant);
+	if(type == BYTE)
+	{
+		int8_t* z = static_cast<int8_t*>(zero);
+
+		*z = static_cast<int8_t>(normalized? float_to_nint<int8_t>(v) : v);
+	}
+	else if( type == UNSIGNED_BYTE )
+	{
+		uint8_t* z = static_cast<uint8_t*>(zero);
+
+		*z = static_cast<uint8_t>(normalized? float_to_nint<uint8_t>(v): v);
+	}
+
+	else if(type == SHORT)
+	{
+		int16_t* z = static_cast<int16_t*>(zero);
+
+		*z = static_cast<int16_t>(normalized? float_to_nint<int16_t>(v) : v);
+	}
+	else if( type == UNSIGNED_SHORT )
+	{
+		uint16_t* z = static_cast<uint16_t*>(zero);
+
+		*z = static_cast<uint16_t>(normalized? float_to_nint<uint16_t>(v) : v);
+	}
+
+	else if(type == INT)
+	{
+		int32_t* z = static_cast<int32_t*>(zero);
+
+		*z = static_cast<int32_t>(normalized? float_to_nint<int32_t>(v) : v);
+	}
+	else if( type == UNSIGNED_INT )
+	{
+		uint32_t* z = static_cast<uint32_t*>(zero);
+
+		*z = static_cast<uint32_t>(normalized? float_to_nint<uint32_t>(v) : v);
+	}
+
+	else if(type == FLOAT)
+	{
+		float* z = static_cast<float*>(zero);
+
+		*z =  v;
+	}
+	else if( type == DOUBLE )
+	{
+		double* z = static_cast<double*>(zero);
+
+		*z = static_cast<double>(v);
+	}
+	else
+		return false;
+
+	return true;
+}
+
 
 Vertex::Vertex(const VertexConfiguration &c, void *b)
 	:m_data(b), cfg(c)
@@ -552,7 +818,7 @@ void Vertex::set_data(ubyte *d)
 }
 
 
-bool Vertex::getAttribute(const AttributeID id, vec4 &v) const
+bool Vertex::get_value(const AttributeID id, vec4 &v) const
 {
 	if(!has_attribute(id))
 		return false;
@@ -561,7 +827,7 @@ bool Vertex::getAttribute(const AttributeID id, vec4 &v) const
 }
 
 
-bool Vertex::getAttribute(const AttributeID id, vec3 &v) const
+bool Vertex::get_value(const AttributeID id, vec3 &v) const
 {
 	if(!has_attribute(id))
 		return false;
@@ -570,7 +836,7 @@ bool Vertex::getAttribute(const AttributeID id, vec3 &v) const
 }
 
 
-bool Vertex::getAttribute(const AttributeID id, vec2 &v) const
+bool Vertex::get_value(const AttributeID id, vec2 &v) const
 {
 	if(!has_attribute(id))
 		return false;
@@ -579,7 +845,7 @@ bool Vertex::getAttribute(const AttributeID id, vec2 &v) const
 }
 
 
-bool Vertex::getAttribute(const AttributeID id, float &v) const
+bool Vertex::get_value(const AttributeID id, float &v) const
 {
 	if(!has_attribute(id))
 		return false;
@@ -588,7 +854,7 @@ bool Vertex::getAttribute(const AttributeID id, float &v) const
 }
 
 
-bool Vertex::setAttribute(const AttributeID id, const vec4 &v) const
+bool Vertex::set_value(const AttributeID id, const vec4 &v) const
 {
 	if(!has_attribute(id))
 		return false;
@@ -597,27 +863,27 @@ bool Vertex::setAttribute(const AttributeID id, const vec4 &v) const
 }
 
 
-bool Vertex::setAttribute(const AttributeID id, const vec3 &v) const
+bool Vertex::set_value(const AttributeID id, const vec3 &v) const
 {
 	const Attribute& a = cfg.get_attribute_by_id(id);
 	return a.write(m_data,v);
 }
 
 
-bool Vertex::setAttribute(const AttributeID id, const vec2 &v) const
+bool Vertex::set_value(const AttributeID id, const vec2 &v) const
 {
 	const Attribute& a = cfg.get_attribute_by_id(id);
 	return a.write(m_data,v);
 }
 
 
-bool Vertex::setAttribute(const AttributeID id, const float v) const
+bool Vertex::set_value(const AttributeID id, const float v) const
 {
 	const Attribute& a = cfg.get_attribute_by_id(id);
 	return a.write(m_data,v);
 }
 
-void *Vertex::get_attribute_ptr(const AttributeID id)
+void *Vertex::get_value_ptr(const AttributeID id)
 {
 	if(cfg.has_attribute(id))
 		return static_cast<ubyte*>(m_data)+cfg.get_attribute_by_id(id).offset;
@@ -638,8 +904,8 @@ bool Vertex::is_equal(const Vertex &o) const
 		if(o.has_attribute(a.attribute_id))
 		{
 			vec4 me, you;
-			getAttribute(a.attribute_id,me);
-			o.getAttribute(a.attribute_id,you);
+			get_value(a.attribute_id,me);
+			o.get_value(a.attribute_id,you);
 
 			if(me!=you)
 				return false;
@@ -677,8 +943,8 @@ bool Vertex::operator <(const Vertex &o) const
 
 VertexData::VertexData(Primitive primitive,
 					   VertexConfiguration cfg,
-					   const uint res_vtx,
 					   const Type index_type ,
+					   const uint res_vtx,
 					   const uint res_idx )
 	:
 	  m_render_primitive(primitive),
@@ -940,7 +1206,7 @@ VertexData *VertexDataTools::readOBJ(FILE* f)
 					{
 
 						p_id  = atoiu(arg[i]) - 1;
-						v.setAttribute(AttributeID::ATTRIB_POSITION,positions[p_id]);
+						v.set_value(AttributeID::ATTRIB_POSITION,positions[p_id]);
 						handle_v(vd,v_loc,v);
 					}
 				}
@@ -952,8 +1218,8 @@ VertexData *VertexDataTools::readOBJ(FILE* f)
 						tkn.getTokenAs(p_id,"/");
 						tkn.getTokenAs(t_id,"/");
 
-						v.setAttribute(AttributeID::ATTRIB_POSITION, positions[p_id-1]);
-						v.setAttribute(AttributeID::ATTRIB_TEXCOORD, tex_coords[t_id-1]);
+						v.set_value(AttributeID::ATTRIB_POSITION, positions[p_id-1]);
+						v.set_value(AttributeID::ATTRIB_TEXCOORD, tex_coords[t_id-1]);
 						handle_v(vd,v_loc,v);
 					}
 				}
@@ -966,8 +1232,8 @@ VertexData *VertexDataTools::readOBJ(FILE* f)
 						tkn.getToken('/');
 						tkn.getTokenAs(n_id,"/");
 
-						v.setAttribute(AttributeID::ATTRIB_POSITION, positions[p_id-1]);
-						v.setAttribute(AttributeID::ATTRIB_NORMAL, tex_coords[n_id-1]);
+						v.set_value(AttributeID::ATTRIB_POSITION, positions[p_id-1]);
+						v.set_value(AttributeID::ATTRIB_NORMAL, tex_coords[n_id-1]);
 						handle_v(vd,v_loc,v);
 					}
 				}
@@ -980,9 +1246,9 @@ VertexData *VertexDataTools::readOBJ(FILE* f)
 						tkn.getTokenAs(t_id,"/");
 						tkn.getTokenAs(n_id,"/");
 
-						v.setAttribute(AttributeID::ATTRIB_POSITION, positions[p_id-1]);
-						v.setAttribute(AttributeID::ATTRIB_TEXCOORD, tex_coords[t_id-1]);
-						v.setAttribute(AttributeID::ATTRIB_NORMAL, normals[n_id-1]);
+						v.set_value(AttributeID::ATTRIB_POSITION, positions[p_id-1]);
+						v.set_value(AttributeID::ATTRIB_TEXCOORD, tex_coords[t_id-1]);
+						v.set_value(AttributeID::ATTRIB_NORMAL, normals[n_id-1]);
 
 						handle_v(vd,v_loc,v);
 					}
@@ -1337,10 +1603,10 @@ VertexData *VertexDataTools::readPLY(FILE* f)
 				*r= static_cast<float>(static_cast<double>(*r)/p.t.max());
 		}
 
-		vtx.setAttribute(ATTRIB_POSITION,pos);
-		vtx.setAttribute(ATTRIB_NORMAL,nrm);
-		vtx.setAttribute(ATTRIB_COLOR,clr);
-		vtx.setAttribute(ATTRIB_TEXCOORD,tex);
+		vtx.set_value(ATTRIB_POSITION,pos);
+		vtx.set_value(ATTRIB_NORMAL,nrm);
+		vtx.set_value(ATTRIB_COLOR,clr);
+		vtx.set_value(ATTRIB_TEXCOORD,tex);
 		vd->push_back(vtx);
 	}
 	// read the faces
@@ -1532,10 +1798,8 @@ bool VertexDataTools::writeOBJ(const VertexData *vd, FILE* f)
 		uint v[4];
 		if (consumed >= 3 || i%2 ==1)
 		{
-			for (uint j = 0; j < vs; j++)
-			{
+			for (uint j = 0; j < vs; j++)		
 				v[j] = vd->get_index(i+j);
-			}
 		}
 		else
 		{
@@ -1553,7 +1817,7 @@ bool VertexDataTools::writeOBJ(const VertexData *vd, FILE* f)
 		for (uint j = 0; j < vs; j++)
 		{
 			const Vertex& vtx = vd->get_vertex(v[j]);
-			if(vtx.getAttribute(AttributeID::ATTRIB_POSITION,pos))
+			if(vtx.get_value(AttributeID::ATTRIB_POSITION,pos))
 			{
 				if(pos2id.find(pos) == pos2id.end())
 				{
@@ -1563,17 +1827,12 @@ bool VertexDataTools::writeOBJ(const VertexData *vd, FILE* f)
 					pid ++;
 				}
 				else
-				{
 					face.v[j].p = pos2id[pos];
-				}
 			}
 			else
-			{
 				face.v[j].p = -1;
-			}
 
-
-			if(vtx.getAttribute(AttributeID::ATTRIB_NORMAL,nrm))
+			if(vtx.get_value(AttributeID::ATTRIB_NORMAL,nrm))
 			{
 				if(nrm2id.find(nrm) == nrm2id.end())
 				{
@@ -1583,17 +1842,12 @@ bool VertexDataTools::writeOBJ(const VertexData *vd, FILE* f)
 					nid++;
 				}
 				else
-				{
 					face.v[j].n = nrm2id[nrm];
-				}
 			}
 			else
-			{
 				face.v[j].n = -1;
-			}
 
-
-			if(vtx.getAttribute(AttributeID::ATTRIB_TEXCOORD,tex))
+			if(vtx.get_value(AttributeID::ATTRIB_TEXCOORD,tex))
 			{
 				if(tex2id.find(tex) == tex2id.end())
 				{
@@ -1603,30 +1857,21 @@ bool VertexDataTools::writeOBJ(const VertexData *vd, FILE* f)
 					tid ++;
 				}
 				else
-				{
 					face.v[j].t = tex2id[tex];
-				}
 			}
-			else
-			{
-				face.v[j].t = -1;
-			}
+			else			
+				face.v[j].t = -1;			
 		}
-
 
 		fprintf(f,"f");
 		for (uint j = 0; j < vs; j++)
 		{
 			if(face.v[j].t >= 0)
 			{
-				if(face.v[j].n >= 0)
-				{
+				if(face.v[j].n >= 0)				
 					fprintf(f," %d/%d/%d",face.v[j].p,face.v[j].t,face.v[j].n);
-				}
 				else
-				{
 					fprintf(f," %d/%d",face.v[j].p,face.v[j].t);
-				}
 			}
 			else if(face.v[j].n >= 0)
 			{
@@ -1664,7 +1909,7 @@ bool VertexDataTools::writeOFF(const VertexData *vd, FILE* f)
 	for(const Vertex& vtx : *vd)
 	{
 		vec3 v;
-		vtx.getAttribute(AttributeID::ATTRIB_POSITION,v);
+		vtx.get_value(AttributeID::ATTRIB_POSITION,v);
 		fprintf(f,"%f %f %f\n",v.x,v.y,v.z);
 	}
 
@@ -1775,7 +2020,6 @@ bool VertexDataTools::recalculate_normals(VertexData *vd, AttributeID to_attribu
 
 	Primitive prim = vd->primitive();
 
-
 	uint consumed = 0;
 	if(prim == TRIANGLES)
 		consumed = 3;
@@ -1795,7 +2039,7 @@ bool VertexDataTools::recalculate_normals(VertexData *vd, AttributeID to_attribu
 			{
 				for (uint j = 0; j < vs; j++)
 				{
-					vd->get_vertex(vd->get_index(i+j)).getAttribute(AttributeID::ATTRIB_POSITION,v[j]);
+					vd->get_vertex(vd->get_index(i+j)).get_value(AttributeID::ATTRIB_POSITION,v[j]);
 					//v[j] = &(verts.at(indices[i+j]).pos());
 				}
 			}
@@ -1804,7 +2048,7 @@ bool VertexDataTools::recalculate_normals(VertexData *vd, AttributeID to_attribu
 				for (uint j = 0; j < vs; j++)
 				{
 					const uint idx = j==0? 1 : j==1? 0:j;
-					vd->get_vertex(vd->get_index(i+idx)).getAttribute(AttributeID::ATTRIB_POSITION,v[j]);
+					vd->get_vertex(vd->get_index(i+idx)).get_value(AttributeID::ATTRIB_POSITION,v[j]);
 					//					v[j] = &(verts.at(indices[i+idx]).pos());
 				}
 			}
@@ -1868,8 +2112,8 @@ bool VertexDataTools::recalculate_normals(VertexData *vd, AttributeID to_attribu
 		vec3 pos;
 		for (Vertex& v : *(vd))
 		{
-			v.getAttribute(AttributeID::ATTRIB_POSITION,pos);
-			v.setAttribute(to_attribute,p2n[pos]);
+			v.get_value(AttributeID::ATTRIB_POSITION,pos);
+			v.set_value(to_attribute,p2n[pos]);
 		}
 	}
 	return true;
@@ -1893,8 +2137,8 @@ bool VertexDataTools::recalculate_tangents(VertexData *vd, AttributeID to_attrib
 		for(uint j = 0 ; j< 3;j++)
 		{
 			auto vtx = vd->get_vertex(vd->get_index(i + j));
-			vtx.getAttribute(AttributeID::ATTRIB_POSITION,v[j]);
-			vtx.getAttribute(AttributeID::ATTRIB_TEXCOORD,uv[j]);
+			vtx.get_value(AttributeID::ATTRIB_POSITION,v[j]);
+			vtx.get_value(AttributeID::ATTRIB_TEXCOORD,uv[j]);
 
 		}
 
@@ -1918,7 +2162,7 @@ bool VertexDataTools::recalculate_tangents(VertexData *vd, AttributeID to_attrib
 
 	for (uint i  =0 ; i<vd->vertex_count() ; i++ )
 	{
-		vd->get_vertex(i).setAttribute(to_attribute,normalize(res_tans[i]));
+		vd->get_vertex(i).set_value(to_attribute,normalize(res_tans[i]));
 	}
 
 	return true;
@@ -1941,9 +2185,15 @@ VertexData *VertexDataTools::reconfigure(VertexData *data, const VertexConfigura
 		{
 			auto aid = s.cfg.get_attribute(a).attribute_id;
 			if(r.has_attribute(aid))
-			{
-				s.getAttribute(aid,attr);
-				r.setAttribute(aid,attr);
+			{				
+				auto& att = r.cfg.get_attribute(aid);
+				if(att.use_constant)
+					att.write_constant(attr);
+				else
+				{
+					s.get_value(aid,attr);
+					r.set_value(aid,attr);
+				}
 			}
 		}
 	}
@@ -2053,4 +2303,102 @@ void Tokenizer::reset(const std::string& base)
 
 
 std::string Tokenizer::whitespaces = " \t\n\v\f\r";
+}
+namespace typ {
+
+
+Type::Type(const std::string &str)
+{
+	if(str == "float" || str == "FLOAT"|| str == "single")
+		id = FLOAT;
+	else if(str == "double" || str == "DOUBLE")
+		id = DOUBLE;
+	else if(str == "int" || str == "INT")
+		id = INT;
+	else if(str == "uint" || str == "UNSIGNED_INT" || str == "unsigned int" || str == "UNSIGNED INT")
+		id = UNSIGNED_INT;
+
+	else if(str == "short" || str == "SHORT")
+		id = SHORT;
+	else if(str == "ushort" || str == "UNSIGNED_SHORT" || str == "unsigned short" || str == "UNSIGNED SHORT")
+		id = UNSIGNED_SHORT;
+
+	else if(str == "char" || str == "byte"|| str == "BYTE")
+		id = BYTE;
+	else
+		id = UNSIGNED_BYTE;
+
+}
+
+std::string Type::to_string()
+{
+	switch (id)
+	{
+	case TypeID::BYTE: return  "char";
+	case TypeID::UNSIGNED_BYTE: return  "uchar";
+	case TypeID::SHORT: return  "short";
+	case TypeID::UNSIGNED_SHORT: return  "ushort";
+	case TypeID::INT: return  "int";
+	case TypeID::UNSIGNED_INT: return  "uint";
+	case TypeID::FLOAT: return  "float";
+	case TypeID::DOUBLE: return  "double";
+	case INVALID: return "INVALID";
+	}
+	return  "";
+}
+
+size_t Type::size() const
+{
+	switch (id)
+	{
+	case BYTE:
+	case UNSIGNED_BYTE:
+		return  1;
+	case SHORT:
+	case UNSIGNED_SHORT:
+		return  2;
+	case INT:
+	case UNSIGNED_INT:
+	case FLOAT:
+		return  4;
+	case DOUBLE:
+		return  8;
+	case INVALID: static_assert(true,"unknown type!");
+	}
+	return  0;
+}
+
+double Type::max() const
+{
+	switch (id)
+	{
+	case BYTE: return std::numeric_limits<int8_t>::max();
+	case UNSIGNED_BYTE: return std::numeric_limits<uint8_t>::max();
+	case SHORT: return std::numeric_limits<int16_t>::max();
+	case UNSIGNED_SHORT: return std::numeric_limits<uint16_t>::max();
+	case INT: return std::numeric_limits<int32_t>::max();
+	case UNSIGNED_INT: return std::numeric_limits<uint32_t>::max();
+	case FLOAT: return static_cast<double>(std::numeric_limits<float>::max());
+	case DOUBLE: return std::numeric_limits<double>::max();
+	case INVALID: static_assert(true,"unknown type!");
+	}
+	return  0;
+}
+
+double Type::min() const
+{
+	switch (id)
+	{
+	case BYTE: return std::numeric_limits<int8_t>::min();
+	case UNSIGNED_BYTE: return std::numeric_limits<uint8_t>::min();
+	case SHORT: return std::numeric_limits<int16_t>::min();
+	case UNSIGNED_SHORT: return std::numeric_limits<uint16_t>::min();
+	case INT: return std::numeric_limits<int32_t>::min();
+	case UNSIGNED_INT: return std::numeric_limits<uint32_t>::min();
+	case FLOAT: return static_cast<double>(std::numeric_limits<float>::min());
+	case DOUBLE: return std::numeric_limits<double>::min();
+	case INVALID: static_assert(true,"unknown type!");
+	}
+	return  0;
+}
 }
