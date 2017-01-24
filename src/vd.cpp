@@ -10,6 +10,216 @@ using namespace  glm;
 using namespace stru;
 using namespace typ;
 
+
+
+namespace stru
+{
+Tokenizer::Tokenizer(const std::string& base)
+{
+	this->m_base = new char[base.length() + 1];
+	memcpy(this->m_base, base.data(), base.length() + 1);
+	this->m_rest = this->m_base;
+	m_delete_base = true;
+}
+
+Tokenizer::Tokenizer(char *base)
+{
+	m_delete_base = false;
+	m_base = m_rest = base;
+}
+
+Tokenizer::~Tokenizer()
+{
+	if(m_delete_base && m_base)
+		delete[] m_base;
+}
+
+
+char* Tokenizer::get_token(char separator)
+{
+	char* to_ret = m_rest;
+
+	if (*m_rest == 0)
+		return nullptr;
+
+	while (*m_rest && *m_rest != separator)
+	{
+		m_rest++;
+	}
+
+	while (*m_rest && *m_rest == separator)
+	{
+		*m_rest =0;
+		m_rest++;
+	}
+	return to_ret;
+}
+
+bool contains(const std::string& str, const char c)
+{
+	for(const auto& cc : str)
+	{
+		if(cc == c)
+		{
+			return true;
+		}
+	}
+	return false;
+}
+char* Tokenizer::get_token(const std::string& separators, char* sep)
+{
+	char* to_ret = m_rest;
+
+	if (*m_rest == 0)
+		return nullptr;
+
+	while (*m_rest && !contains(separators,*m_rest))
+	{
+		m_rest++;
+	}
+
+	if(sep)
+		*sep = *m_rest;
+
+	while (*m_rest && contains(separators,*m_rest))
+	{
+		*m_rest = 0;
+		m_rest++;
+	}
+
+	return to_ret;
+}
+
+
+void Tokenizer::skip_over_all(const std::string& seps)
+{
+	while(*m_rest && contains(seps,*m_rest))
+	{
+		m_rest++;
+	}
+}
+void Tokenizer::skip_white_spaces()
+{
+	while(*m_rest && isspace(*m_rest))
+		m_rest++;
+}
+
+
+void Tokenizer::reset(const std::string& base)
+{
+	if(m_delete_base && m_base)
+		delete[] m_base;
+	m_delete_base  = true;
+	this->m_base = new char[base.length() + 1];
+	memcpy(this->m_base, base.data(), base.length() + 1);
+	this->m_rest = this->m_base;
+}
+
+
+std::string Tokenizer::whitespaces = " \t\n\v\f\r";
+}
+namespace typ {
+
+
+Type::Type(const std::string &str)
+{
+	if(str == "float" || str == "FLOAT"|| str == "single")
+		id = FLOAT;
+	else if(str == "double" || str == "DOUBLE")
+		id = DOUBLE;
+	else if(str == "int" || str == "INT")
+		id = INT;
+	else if(str == "uint" || str == "UNSIGNED_INT" || str == "unsigned int" || str == "UNSIGNED INT")
+		id = UNSIGNED_INT;
+
+	else if(str == "short" || str == "SHORT")
+		id = SHORT;
+	else if(str == "ushort" || str == "UNSIGNED_SHORT" || str == "unsigned short" || str == "UNSIGNED SHORT")
+		id = UNSIGNED_SHORT;
+
+	else if(str == "char" || str == "byte"|| str == "BYTE")
+		id = BYTE;
+	else
+		id = UNSIGNED_BYTE;
+
+}
+
+std::string Type::to_string()
+{
+	switch (id)
+	{
+	case TypeID::BYTE: return  "char";
+	case TypeID::UNSIGNED_BYTE: return  "uchar";
+	case TypeID::SHORT: return  "short";
+	case TypeID::UNSIGNED_SHORT: return  "ushort";
+	case TypeID::INT: return  "int";
+	case TypeID::UNSIGNED_INT: return  "uint";
+	case TypeID::FLOAT: return  "float";
+	case TypeID::DOUBLE: return  "double";
+	case INVALID: return "INVALID";
+	}
+	return  "";
+}
+
+size_t Type::size() const
+{
+	switch (id)
+	{
+	case BYTE:
+	case UNSIGNED_BYTE:
+		return  1;
+	case SHORT:
+	case UNSIGNED_SHORT:
+		return  2;
+	case INT:
+	case UNSIGNED_INT:
+	case FLOAT:
+		return  4;
+	case DOUBLE:
+		return  8;
+	case INVALID: static_assert(true,"unknown type!");
+	}
+	return  0;
+}
+
+double Type::max() const
+{
+	switch (id)
+	{
+	case BYTE: return std::numeric_limits<int8_t>::max();
+	case UNSIGNED_BYTE: return std::numeric_limits<uint8_t>::max();
+	case SHORT: return std::numeric_limits<int16_t>::max();
+	case UNSIGNED_SHORT: return std::numeric_limits<uint16_t>::max();
+	case INT: return std::numeric_limits<int32_t>::max();
+	case UNSIGNED_INT: return std::numeric_limits<uint32_t>::max();
+	case FLOAT: return static_cast<double>(std::numeric_limits<float>::max());
+	case DOUBLE: return std::numeric_limits<double>::max();
+	case INVALID: static_assert(true,"unknown type!");
+	}
+	return  0;
+}
+
+double Type::min() const
+{
+	switch (id)
+	{
+	case BYTE: return std::numeric_limits<int8_t>::min();
+	case UNSIGNED_BYTE: return std::numeric_limits<uint8_t>::min();
+	case SHORT: return std::numeric_limits<int16_t>::min();
+	case UNSIGNED_SHORT: return std::numeric_limits<uint16_t>::min();
+	case INT: return std::numeric_limits<int32_t>::min();
+	case UNSIGNED_INT: return std::numeric_limits<uint32_t>::min();
+	case FLOAT: return static_cast<double>(std::numeric_limits<float>::min());
+	case DOUBLE: return std::numeric_limits<double>::min();
+	case INVALID: static_assert(true,"unknown type!");
+	}
+	return  0;
+}
+}
+
+namespace vd {
+
+
 uint32_t Attribute::size() const
 {
 	return  (type.size())*elements;
@@ -916,9 +1126,33 @@ bool Vertex::is_equal(const Vertex &o) const
 
 bool Vertex::operator ==(const Vertex &o) const
 {
-	if(cfg != o.cfg)
-		return false;
-	return memcmp(m_data,o.m_data,cfg.vertex_size());
+	vec4 aa;
+	vec4 bb;
+
+
+	const float eps = 200.0*std::numeric_limits<float>::epsilon();
+
+	for (uint i = 0 ; i< cfg.attribute_count();i++)
+	{
+		const auto a = cfg.get_attribute(i);
+		const auto b = o.cfg.get_attribute_by_id(a.attribute_id);
+
+		a.read(m_data,aa);
+		b.read(o.m_data,bb);
+
+		for(int j = 0 ; j< 4;j++)
+		{
+			auto e = fabsf(aa[j]-bb[j]);
+
+			if(e < eps)
+				continue;
+			else
+				return false;
+		}
+
+
+	}
+	return true;
 }
 
 bool Vertex::operator !=(const Vertex &o) const
@@ -926,18 +1160,38 @@ bool Vertex::operator !=(const Vertex &o) const
 	return  !(*this==o);
 }
 
+
+
 bool Vertex::operator <(const Vertex &o) const
 {
-	const ubyte* a = static_cast<ubyte*>(m_data);
-	const ubyte* b = static_cast<ubyte*>(o.m_data);
-	for(uint i =0; i <cfg.vertex_size();i++)
+	vec4 aa;
+	vec4 bb;
+
+	for (uint i = 0 ; i< cfg.attribute_count();i++)
 	{
-		if(a[i]<b[i])
-			return true;
-		if(a[i]>b[i])
-			return false;
+		const auto a = cfg.get_attribute(i);
+		const auto b = o.cfg.get_attribute_by_id(a.attribute_id);
+
+		a.read(m_data,aa);
+		b.read(o.m_data,bb);
+
+		const float eps = 200.0*std::numeric_limits<float>::epsilon();
+
+		for(int j = 0 ; j< 4;j++)
+		{
+			auto e = aa[j]-bb[j];
+
+			if(fabs(e) < eps)
+				continue;
+			if(e<0)
+				return true;
+			if(e>0)
+				return false;
+		}
+
 	}
 	return false;
+
 }
 
 
@@ -1105,7 +1359,7 @@ void handle_v(VertexData* vd, std::map<Vertex,uint32_t>& v_loc, const Vertex& v)
 #define atoff(s) static_cast<float>(atof(s))
 #define atoiu(s) static_cast<uint32_t>(atoi(s))
 
-VertexData *VDOps::read_obj(FILE* f)
+VertexData *Operations::read_obj(FILE* f)
 {
 
 	// mesh loader the 10000ths ^^
@@ -1267,7 +1521,7 @@ VertexData *VDOps::read_obj(FILE* f)
 	return vd;
 }
 
-VertexData *VDOps::read_vd(FILE *f)
+VertexData *Operations::read_vd(FILE *f)
 {
 	if(!f)
 		return nullptr;
@@ -1365,7 +1619,7 @@ VertexData *VDOps::read_vd(FILE *f)
 
 }
 
-bool VDOps::write_vd(const VertexData *vd, FILE *f)
+bool Operations::write_vd(const VertexData *vd, FILE *f)
 {
 	if(!f)
 		return false;
@@ -1443,7 +1697,7 @@ bool VDOps::write_vd(const VertexData *vd, FILE *f)
 
 
 
-VertexData *VDOps::read_ply(FILE* f)
+VertexData *Operations::read_ply(FILE* f)
 {
 
 	if (!f)
@@ -1590,11 +1844,11 @@ VertexData *VDOps::read_ply(FILE* f)
 		{
 			switch (p.a)
 			{
-				case ATTRIB_POSITION: r = &pos[p.c]; break;
-				case ATTRIB_NORMAL: r = &nrm[p.c]; break;
-				case ATTRIB_COLOR: r = &clr[p.c]; break;
-				case ATTRIB_TEXCOORD: r = &tex[p.c]; break;
-				default: continue;
+			case ATTRIB_POSITION: r = &pos[p.c]; break;
+			case ATTRIB_NORMAL: r = &nrm[p.c]; break;
+			case ATTRIB_COLOR: r = &clr[p.c]; break;
+			case ATTRIB_TEXCOORD: r = &tex[p.c]; break;
+			default: continue;
 			}
 
 			tkn.get_token_as(*r,tkn.whitespaces);
@@ -1765,7 +2019,7 @@ public:
 	}
 };
 
-bool VDOps::write_obj(const VertexData *vd, FILE* f)
+bool Operations::write_obj(const VertexData *vd, FILE* f)
 {
 	if(!f)
 		return false;
@@ -1798,7 +2052,7 @@ bool VDOps::write_obj(const VertexData *vd, FILE* f)
 		uint v[4];
 		if (consumed >= 3 || i%2 ==1)
 		{
-			for (uint j = 0; j < vs; j++)		
+			for (uint j = 0; j < vs; j++)
 				v[j] = vd->get_index(i+j);
 		}
 		else
@@ -1859,8 +2113,8 @@ bool VDOps::write_obj(const VertexData *vd, FILE* f)
 				else
 					face.v[j].t = tex2id[tex];
 			}
-			else			
-				face.v[j].t = -1;			
+			else
+				face.v[j].t = -1;
 		}
 
 		fprintf(f,"f");
@@ -1868,7 +2122,7 @@ bool VDOps::write_obj(const VertexData *vd, FILE* f)
 		{
 			if(face.v[j].t >= 0)
 			{
-				if(face.v[j].n >= 0)				
+				if(face.v[j].n >= 0)
 					fprintf(f," %d/%d/%d",face.v[j].p,face.v[j].t,face.v[j].n);
 				else
 					fprintf(f," %d/%d",face.v[j].p,face.v[j].t);
@@ -1887,12 +2141,12 @@ bool VDOps::write_obj(const VertexData *vd, FILE* f)
 	return true;
 }
 
-bool VDOps::write_ply(const VertexData */*vd*/, FILE*/*f*/)
+bool Operations::write_ply(const VertexData */*vd*/, FILE*/*f*/)
 {
 	return false;
 }
 
-bool VDOps::write_off(const VertexData *vd, FILE* f)
+bool Operations::write_off(const VertexData *vd, FILE* f)
 {
 
 	if(!f)
@@ -1928,10 +2182,10 @@ bool VDOps::write_off(const VertexData *vd, FILE* f)
 	return true;
 }
 
-bool VDOps::write_to_file(
+bool Operations::write_to_file(
 		const VertexData *vd,
 		const std::string &p,
-		VDOps::FileFormat f)
+		Operations::FileFormat f)
 {
 
 
@@ -1969,9 +2223,9 @@ bool VDOps::write_to_file(
 	return res;
 }
 
-VertexData* VDOps::read_from_file(
+VertexData* Operations::read_from_file(
 		const std::string &path,
-		VDOps::FileFormat f)
+		Operations::FileFormat f)
 {
 	std::string ending = paths::extension(path);
 	if (f == FROM_PATH)
@@ -2008,7 +2262,7 @@ VertexData* VDOps::read_from_file(
 	return res;
 }
 
-bool VDOps::recalculate_normals(VertexData *vd, AttributeID to_attribute)
+bool Operations::recalculate_normals(VertexData *vd, AttributeID to_attribute)
 {
 	if(!vd->vertex_configuration().has_attribute(to_attribute))
 	{
@@ -2119,7 +2373,7 @@ bool VDOps::recalculate_normals(VertexData *vd, AttributeID to_attribute)
 	return true;
 }
 
-bool VDOps::recalculate_tangents(VertexData *vd, AttributeID to_attribute)
+bool Operations::recalculate_tangents(VertexData *vd, AttributeID to_attribute)
 {
 	if(!vd->vertex_configuration().has_attribute(to_attribute))
 	{
@@ -2168,7 +2422,7 @@ bool VDOps::recalculate_tangents(VertexData *vd, AttributeID to_attribute)
 	return true;
 }
 
-VertexData *VDOps::reconfigure(VertexData *data, const VertexConfiguration &new_config, bool null)
+VertexData *Operations::reconfigure(VertexData *data, const VertexConfiguration &new_config, bool null)
 {
 	VertexData* res = new VertexData(data->m_render_primitive,new_config,data->m_vertex_count,data->m_index_type,data->m_index_count);
 	memcpy(res->indices(),data->indices(),data->index_count()*data->m_index_type.size());
@@ -2185,7 +2439,7 @@ VertexData *VDOps::reconfigure(VertexData *data, const VertexConfiguration &new_
 		{
 			auto aid = s.cfg.get_attribute(a).attribute_id;
 			if(r.has_attribute(aid))
-			{				
+			{
 				auto& att = r.cfg.get_attribute(aid);
 				if(att.use_constant)
 					att.write_constant(attr);
@@ -2202,207 +2456,709 @@ VertexData *VDOps::reconfigure(VertexData *data, const VertexConfiguration &new_
 }
 
 
-namespace stru
+
+void Factory::handle_primitive_buffer()
 {
-Tokenizer::Tokenizer(const std::string& base)
-{
-	this->m_base = new char[base.length() + 1];
-	memcpy(this->m_base, base.data(), base.length() + 1);
-	this->m_rest = this->m_base;
-	m_delete_base = true;
-}
+	if (primitive_buffer.empty())
+		return;
 
-Tokenizer::Tokenizer(char *base)
-{
-	m_delete_base = false;
-	m_base = m_rest = base;
-}
-
-Tokenizer::~Tokenizer()
-{
-	if(m_delete_base && m_base)
-		delete[] m_base;
-}
-
-
-char* Tokenizer::get_token(char separator)
-{
-	char* to_ret = m_rest;
-
-	if (*m_rest == 0)
-		return nullptr;
-
-	while (*m_rest && *m_rest != separator)
+	if (m_input_primitive == QUADS)
 	{
-		m_rest++;
-	}
-
-	while (*m_rest && *m_rest == separator)
-	{
-		*m_rest =0;
-		m_rest++;
-	}
-	return to_ret;
-}
-
-bool contains(const std::string& str, const char c)
-{
-	for(const auto& cc : str)
-	{
-		if(cc == c)
+		if (primitive_buffer.size() == 4)
 		{
-			return true;
+
+			m_current_mesh->push_back(primitive_buffer[0]);
+			m_current_mesh->push_back(primitive_buffer[1]);
+			m_current_mesh->push_back(primitive_buffer[2]);
+			m_current_mesh->push_back(primitive_buffer[0]);
+			m_current_mesh->push_back(primitive_buffer[2]);
+			m_current_mesh->push_back(primitive_buffer[3]);
+			primitive_buffer.clear();
 		}
 	}
-	return false;
-}
-char* Tokenizer::get_token(const std::string& separators, char* sep)
-{
-	char* to_ret = m_rest;
-
-	if (*m_rest == 0)
-		return nullptr;
-
-	while (*m_rest && !contains(separators,*m_rest))
-	{
-		m_rest++;
-	}
-
-	if(sep)
-		*sep = *m_rest;
-
-	while (*m_rest && contains(separators,*m_rest))
-	{
-		*m_rest = 0;
-		m_rest++;
-	}
-
-	return to_ret;
-}
-
-
-void Tokenizer::skip_over_all(const std::string& seps)
-{
-	while(*m_rest && contains(seps,*m_rest))
-	{
-		m_rest++;
-	}
-}
-void Tokenizer::skip_white_spaces()
-{
-	while(*m_rest && isspace(*m_rest))
-		m_rest++;
-}
-
-
-void Tokenizer::reset(const std::string& base)
-{
-	if(m_delete_base && m_base)
-		delete[] m_base;
-	m_delete_base  = true;
-	this->m_base = new char[base.length() + 1];
-	memcpy(this->m_base, base.data(), base.length() + 1);
-	this->m_rest = this->m_base;
-}
-
-
-std::string Tokenizer::whitespaces = " \t\n\v\f\r";
-}
-namespace typ {
-
-
-Type::Type(const std::string &str)
-{
-	if(str == "float" || str == "FLOAT"|| str == "single")
-		id = FLOAT;
-	else if(str == "double" || str == "DOUBLE")
-		id = DOUBLE;
-	else if(str == "int" || str == "INT")
-		id = INT;
-	else if(str == "uint" || str == "UNSIGNED_INT" || str == "unsigned int" || str == "UNSIGNED INT")
-		id = UNSIGNED_INT;
-
-	else if(str == "short" || str == "SHORT")
-		id = SHORT;
-	else if(str == "ushort" || str == "UNSIGNED_SHORT" || str == "unsigned short" || str == "UNSIGNED SHORT")
-		id = UNSIGNED_SHORT;
-
-	else if(str == "char" || str == "byte"|| str == "BYTE")
-		id = BYTE;
 	else
-		id = UNSIGNED_BYTE;
-
-}
-
-std::string Type::to_string()
-{
-	switch (id)
 	{
-	case TypeID::BYTE: return  "char";
-	case TypeID::UNSIGNED_BYTE: return  "uchar";
-	case TypeID::SHORT: return  "short";
-	case TypeID::UNSIGNED_SHORT: return  "ushort";
-	case TypeID::INT: return  "int";
-	case TypeID::UNSIGNED_INT: return  "uint";
-	case TypeID::FLOAT: return  "float";
-	case TypeID::DOUBLE: return  "double";
-	case INVALID: return "INVALID";
+		m_current_mesh->push_back(primitive_buffer[0]);
+		primitive_buffer.clear();
 	}
-	return  "";
+	return;
 }
 
-size_t Type::size() const
+Factory::~Factory()
 {
-	switch (id)
-	{
-	case BYTE:
-	case UNSIGNED_BYTE:
-		return  1;
-	case SHORT:
-	case UNSIGNED_SHORT:
-		return  2;
-	case INT:
-	case UNSIGNED_INT:
-	case FLOAT:
-		return  4;
-	case DOUBLE:
-		return  8;
-	case INVALID: static_assert(true,"unknown type!");
-	}
-	return  0;
+	if(m_current_mesh)
+		delete  m_current_mesh;
 }
 
-double Type::max() const
+void Factory::begin(Primitive primitive)
 {
-	switch (id)
-	{
-	case BYTE: return std::numeric_limits<int8_t>::max();
-	case UNSIGNED_BYTE: return std::numeric_limits<uint8_t>::max();
-	case SHORT: return std::numeric_limits<int16_t>::max();
-	case UNSIGNED_SHORT: return std::numeric_limits<uint16_t>::max();
-	case INT: return std::numeric_limits<int32_t>::max();
-	case UNSIGNED_INT: return std::numeric_limits<uint32_t>::max();
-	case FLOAT: return static_cast<double>(std::numeric_limits<float>::max());
-	case DOUBLE: return std::numeric_limits<double>::max();
-	case INVALID: static_assert(true,"unknown type!");
-	}
-	return  0;
+	if(!m_current_mesh)
+		m_current_mesh = new VertexData(primitive,m_cfg,m_index_type);
+	m_input_primitive = primitive;
 }
 
-double Type::min() const
+VertexData *Factory::finish()
 {
-	switch (id)
+	Primitive res_prim = m_input_primitive;
+
+	if(res_prim == QUADS)
+		res_prim = TRIANGLES;
+	if(res_prim == QUAD_STRIP)
+		res_prim = TRIANGLE_STRIP;
+
+	m_current_mesh->set_primitive(res_prim);
+
+	auto res = m_current_mesh;
+	m_current_mesh = nullptr;
+	m_vertex_ids.clear();
+	return res;
+}
+
+void Factory::color(const vec4 &color)
+{
+	m_attribute_state[ATTRIB_COLOR] = color;
+}
+
+void Factory::color(const vec3 &color)
+{
+	m_attribute_state[ATTRIB_COLOR] = vec4(color,1.0f);
+}
+
+void Factory::color(const float &red, const float &green, const float &blue, const float &alpha)
+{
+	m_attribute_state[ATTRIB_COLOR] = vec4(red,green,blue,alpha);
+}
+
+void Factory::normal(const vec3 &normal)
+{
+	m_attribute_state[ATTRIB_NORMAL] = vec4(normal,0.0f);
+}
+
+void Factory::normal(const float &x, const float &y, const float &z)
+{
+	m_attribute_state[ATTRIB_NORMAL] = vec4(x,y,z,0.0f);
+}
+
+void Factory::tex_coord(const vec3 &tc)
+{
+	m_attribute_state[ATTRIB_TEXCOORD] = vec4(tc,0.0f);
+}
+
+void Factory::tex_coord(const vec2 &tc)
+{
+	m_attribute_state[ATTRIB_TEXCOORD] = vec4(tc,0.0f,0.0f);
+}
+
+void Factory::tex_coord(const float &s, const float &t, const float &r)
+{
+	m_attribute_state[ATTRIB_TEXCOORD] = vec4(s,t,r,0.0f);
+}
+
+void Factory::vertex(const vec4 &v)
+{
+	uint id = 0;
+	m_v.set_value(ATTRIB_POSITION,v);
+	for(int i = 1 ; i  < ATTRIB_COUNT ;i++)
 	{
-	case BYTE: return std::numeric_limits<int8_t>::min();
-	case UNSIGNED_BYTE: return std::numeric_limits<uint8_t>::min();
-	case SHORT: return std::numeric_limits<int16_t>::min();
-	case UNSIGNED_SHORT: return std::numeric_limits<uint16_t>::min();
-	case INT: return std::numeric_limits<int32_t>::min();
-	case UNSIGNED_INT: return std::numeric_limits<uint32_t>::min();
-	case FLOAT: return static_cast<double>(std::numeric_limits<float>::min());
-	case DOUBLE: return std::numeric_limits<double>::min();
-	case INVALID: static_assert(true,"unknown type!");
+		m_v.set_value(static_cast<AttributeID>(i),m_attribute_state[i]);
 	}
-	return  0;
+
+
+	if (this->m_vertex_ids.find(m_v) != m_vertex_ids.end())
+	{
+		id = m_vertex_ids[m_v];
+	}
+	else
+	{
+		id = static_cast<uint>(this->m_current_mesh->vertex_count());
+		this->m_current_mesh->push_back(m_v);
+		m_vertex_ids[m_v] = id;
+	}
+
+	this->primitive_buffer.push_back(id);
+	this->handle_primitive_buffer();
 }
+
+void Factory::vertex(const vec2 &v)
+{
+	vertex(vec4(v,0.0f,1.0f));
 }
+
+void Factory::vertex(const vec3 &v)
+{
+	vertex(vec4(v,1.0f));
+}
+
+void Factory::vertex(const float &x, const float &y, const float &z, const float &w)
+{
+	vertex(vec4(x,y,z,w));
+}
+
+void Factory::vertex(const float *v)
+{
+	vertex(vec4(v[0],v[1],v[2],v[3]));
+}
+
+void Factory::vertex(const Vertex &vertex)
+{
+	Vertex v = vertex;
+	uint32_t id = 0;
+
+	if (this->m_vertex_ids.find(v) != m_vertex_ids.end())
+	{
+		id = m_vertex_ids[v];
+	}
+	else
+	{
+		id = static_cast<uint>(m_current_mesh->vertex_count());
+		m_current_mesh->push_back(v);
+		m_vertex_ids[v] = id;
+	}
+	this->primitive_buffer.push_back(id);
+	this->handle_primitive_buffer();
+}
+
+VertexData *Factory::create_box(float x, float y, float z)
+{
+
+	this->begin(QUADS);
+	float i = 0.5f;
+	vec3 a(-i*x, -i*y, i*z);
+	vec3 b(i*x, -i*y, i*z);
+	vec3 c(-i*x, i*y, i*z);
+	vec3 d(i*x, i*y, i*z);
+	vec3 e(-i*x, -i*y, -i*z);
+	vec3 f(i*x, -i*y, -i*z);
+	vec3 g(-i*x, i*y, -i*z);
+	vec3 h(i*x, i*y, -i*z);
+
+	vec3 n(0, 0, 1);
+	this->addQuad(a, b, d, c,
+				  vec2(0.4f, 0.0f),vec2(0.7f,0.0f), vec2(0.7f,0.3f), vec2(0.4f,0.3f),
+				  n, n, n, n);
+
+	n = vec3(1, 0, 0);
+	this->addQuad(b, f, h, d,
+				  vec2(1.0f, 0.3f),vec2(1.0f, 0.6f), vec2(0.7f, 0.6f), vec2(0.7f, 0.3f),
+				  n, n, n, n);
+
+	n = vec3(0, 0, -1);
+	this->addQuad(f, e, g, h,
+				  vec2(0.7f, 0.9f),vec2(0.4f, 0.9f), vec2(0.4f, 0.6f), vec2(0.7f, 0.6f),
+				  n, n, n, n);
+
+	n = vec3(-1, 0, 0);
+	this->addQuad(e, a, c, g,
+				  vec2(0.1f, 0.6f),vec2(0.1f, 0.3f), vec2(0.4f, 0.3f), vec2(0.4f, 0.6f),
+				  n, n, n, n);
+
+	n = vec3(0, 1, 0);
+	this->addQuad(c, d, h, g,
+				  vec2(0.4f, 0.3f),vec2(0.7f, 0.3f), vec2(0.7f, 0.6f), vec2(0.4f, 0.6f),
+				  n, n, n, n);
+
+	n = vec3(0, -1, 0);
+	this->addQuad(a, b, f, e,
+				  vec2(0.0f, 0.7f),vec2(0.3f, 0.7f), vec2(0.3f, 1.0f), vec2(0.0f, 1.0f),
+				  n, n, n, n);
+
+	return this->finish();
+}
+
+VertexData *Factory::create_plane(float w, float h, unsigned int tess_w, unsigned int tess_h)
+{
+	float d_w = w / tess_w;
+	float d_h = h / tess_h;
+
+	vec3 offset = vec3(-w / 2, -h / 2, 0);
+	this->begin(QUADS);
+	normal(0.0f, 0.0f, 1.0f);
+
+	for (unsigned int x = 0; x < tess_w; x++)
+	{
+		for (unsigned int y = 0; y < tess_h; y++)
+		{
+			this->addQuad(
+						vec3(d_w*(x + 0),d_h* (y + 0), 0.0f) + offset,
+						vec3(d_w*(x + 1),d_h* (y + 0), 0.0f) + offset,
+						vec3(d_w*(x + 1),d_h* (y + 1), 0.0f) + offset,
+						vec3(d_w*(x + 0),d_h* (y + 1), 0.0f) + offset,
+						vec2(static_cast<float>(x + 0) / tess_w,
+							 static_cast<float>(y + 0) / tess_h),
+						vec2(static_cast<float>(x + 1) / tess_w,
+							 static_cast<float>(y + 0) / tess_h),
+						vec2(static_cast<float>(x + 1) / tess_w,
+							 static_cast<float>(y + 1) / tess_h),
+						vec2(static_cast<float>(x + 0) / tess_w,
+							 static_cast<float>(y + 1) / tess_h));
+		}
+	}
+
+	return this->finish();
+}
+
+VertexData *Factory::createCoordinateSystem()
+{
+	this->begin(LINES);
+	this->color(vec3(0.9f, 0.0f, 0.0f));
+	this->vertex(0.0f, 0.0f, 0.0f);
+	this->vertex(1.0f, 0.0f, 0.0f);
+
+	this->vertex(1.0f, 0.05f, 0.0f);
+	this->vertex(1.0f, -0.05f, 0.0f);
+
+	this->vertex(1.0f, 0.05f, 0.0f);
+	this->vertex(1.05f, 0.0f, 0.0f);
+	this->vertex(1.05f, 0.0f, 0.0f);
+	this->vertex(1.0f, -0.05f, 0.0f);
+
+	this->color(vec3(0.0f, 0.9f, 0.0f));
+	this->vertex(0.0f, 0.0f, 0.0f);
+	this->vertex(0.0f, 1.0f, 0.0f);
+
+	this->vertex(0.05f, 1.0f, 0.0f);
+	this->vertex(-0.05f, 1.0f, 0.0f);
+
+	this->vertex(0.05f, 1.0f, 0.0f);
+	this->vertex(0.00f, 1.05f, 0.0f);
+	this->vertex(0.00f, 1.05f, 0.0f);
+	this->vertex(-0.05f, 1.0f, 0.0f);
+
+	this->color(vec3(0.0f, 0.0f, 0.9f));
+	this->vertex(0.0f, 0.0f, 0.0f);
+	this->vertex(0.0f, 0.0f, 1.0f);
+
+	this->vertex(0.0f, 0.05f, 1.0f);
+	this->vertex(0.0f, -0.05f, 1.0f);
+
+	this->vertex(0.0f, 0.05f, 1.0f);
+	this->vertex(0.0f, 0.0f, 1.05f);
+	this->vertex(0.0f, 0.0f, 1.05f);
+	this->vertex(0.0f, -0.05f, 1.0f);
+
+	return this->finish();
+}
+
+vec2 colorTexCoordFramPosition(const vec3 &pos, const float &offset)
+{
+	const float pi = 3.14159265359f;
+	vec2 uv = vec2(pos.x, pos.y);
+	float factor = 1.0f - (sin(fabs(pos.z) * pi)*0.1f);
+	uv *= factor;
+	uv += vec2(1);
+	uv *= vec2(0.5);
+	uv += (offset);
+
+	uv *= M_SQRT2 / (1.0 + M_SQRT2);
+	return uv;
+}
+
+VertexData *Factory::create_uv_sphere(float radius, unsigned int slices, unsigned int stacks)
+{
+	this->begin(TRIANGLES);
+	const float st_step = M_PI / stacks;
+	const float sl_step = M_PI*2.0f / slices;
+	for (unsigned int st = 0; st < stacks; st++)
+	{
+		const float st_r1 = st_step*st;
+		const float st_r2 = st_step*st + st_step;
+
+		const float sin_o1 = sin(st_r1);
+		const float sin_o2 = sin(st_r2);
+
+		const float cos_o1 = cos(st_r1);
+		const float cos_o2 = cos(st_r2);
+
+		for (unsigned int sl = 0; sl < slices; sl++)
+		{
+			const float sl_r1 = sl_step*sl;
+			const float sl_r2 = sl_step*sl + sl_step;
+
+
+
+			const float sin_d1 = sin(sl_r1);
+			const float sin_d2 = sin(sl_r2);
+
+			const float cos_d1 = cos(sl_r1);
+			const float cos_d2 = cos(sl_r2);
+
+			float tex_offset = 0.0f;
+			if (st >= stacks / 2u)
+				tex_offset = static_cast<float>(M_SQRT2)*0.5f;
+
+
+			/*Compute positions and tex_coords for the current quad:*/
+			vec3 pos[4];
+			vec2 uv[4];
+			pos[0] = vec3(sin_o1*cos_d1, sin_o1*sin_d1, cos_o1);
+			pos[1] = vec3(sin_o2*cos_d1, sin_o2*sin_d1, cos_o2);
+			pos[2] = vec3(sin_o2*cos_d2, sin_o2*sin_d2, cos_o2);
+			pos[3] = vec3(sin_o1*cos_d2, sin_o1*sin_d2, cos_o1);
+
+			for (int i = 0; i < 4;i++)
+			{
+				pos[i] = normalize(pos[i]);
+				uv[i] = colorTexCoordFramPosition(pos[i], tex_offset);
+			}
+
+			/* Draw a quad unless you are about do draw the last and the first
+				   stack.
+				*/
+			if (st != 0 && st< stacks - 1)
+			{
+				tex_coord(uv[0]);
+				normal(pos[0]);
+				vertex(pos[0]*radius);
+
+				tex_coord(uv[1]);
+				normal(pos[1]);
+				vertex(pos[1]*radius);
+
+				tex_coord(uv[2]);
+				normal(pos[2]);
+				vertex(pos[2]*radius);
+
+				tex_coord(uv[0]);
+				normal(pos[0]);
+				vertex(pos[0]*radius);
+
+				tex_coord(uv[2]);
+				normal(pos[2]);
+				vertex(pos[2]*radius);
+
+				tex_coord(uv[3]);
+				normal(pos[3]);
+				vertex(pos[3]*radius);
+			}
+			else
+			{
+				/* If it is the last stack:*/
+				if (st != 0)
+				{
+					tex_coord(uv[0]);
+					normal(pos[0]);
+					vertex(pos[0]*radius);
+
+					tex_coord(uv[2]);
+					normal(pos[2]);
+					vertex(pos[2]*radius);
+
+					tex_coord(uv[3]);
+					normal(pos[3]);
+					vertex(pos[3]*radius);
+				}
+				/* If it is the first stack:*/
+				else
+				{
+					tex_coord(uv[0]);
+					normal(pos[0]);
+					vertex(pos[0]*radius);
+
+					tex_coord(uv[1]);
+					normal(pos[1]);
+					vertex(pos[1]*radius);
+
+					tex_coord(uv[2]);
+					normal(pos[2]);
+					vertex(pos[2]*radius);
+				}
+			}
+		}
+	}
+
+	return this->finish();
+}
+
+VertexData *Factory::create_cylinder(float radius, float height, unsigned int slices, unsigned int stacks)
+{
+	this->begin(QUADS);
+
+
+	float nz = 0;
+
+	/*Used to implement the UV mapping*/
+	const float twoPi = 2.0f*3.14159265359f;
+	float ar = height / (twoPi*radius);
+	if (ar > 1)
+		ar = 1;
+
+	float circum_step = 2.0f*3.14159265359f / slices;
+	float height_step = height / stacks;
+	for (unsigned int st = 0; st < stacks ; st++) // stacks
+	{
+		float zlow = st *  height_step;
+		float zhigh = (1+st) * height / stacks;
+		for (unsigned int i = 0; i < slices; i++) // slices
+		{
+
+			/* Some precomputations we need for both normals and positions */
+			const float ax = sin(circum_step*(i + 0));
+			const float ay = cos(circum_step*(i + 0));
+			const float bx = sin(circum_step*(i + 1));
+			const float by = cos(circum_step*(i + 1));
+
+			/* Create a quad.*/
+			this->tex_coord(((i + 0)*circum_step) / twoPi, zlow / height);
+			normal(glm::normalize(vec3(ax, ay, nz)));
+			this->vertex(radius*ax, radius*ay, zlow);
+
+			this->tex_coord(((i + 1)*circum_step) / twoPi, zlow / height);
+			normal(glm::normalize(vec3(bx, by, nz)));
+			this->vertex(radius*bx, radius*by, zlow);
+
+			this->tex_coord(((i + 1)*circum_step) / twoPi, zhigh / height);
+			normal(glm::normalize(vec3(bx, by, nz)));
+			this->vertex(radius*bx, radius*by, zhigh);
+
+			this->tex_coord(((i + 0)*circum_step) / twoPi, zhigh / height);
+			normal(glm::normalize(vec3(ax, ay, nz)));
+			this->vertex(radius*ax, radius*ay, zhigh);
+		}
+	}
+	return this->finish();
+
+}
+
+VertexData *Factory::create_cone(float baseRadius, float topRadius, float height, unsigned int slices, unsigned int stacks)
+{
+	this->begin(QUADS);
+	float circum_step = 2.0f*3.141595654f / slices;
+	float radius_step = (topRadius - baseRadius) / stacks;
+	float height_step = height / stacks;
+	const float inner_radius = 0.01f;
+	float nz = tan((baseRadius - topRadius) / height);
+
+	for (unsigned int st = 0; st < stacks; st++) // stacks
+	{
+		float zlow = st *  height_step;
+		float zhigh = (1 + st) * height / stacks;
+		float rlow = baseRadius + st*radius_step;
+		float rhigh = baseRadius + (st + 1)*radius_step;
+
+		float uv_r_low = ((1.0f) - (static_cast<float>(st) / stacks));
+		uv_r_low = (0.5f - inner_radius) * uv_r_low + inner_radius;
+
+		float uv_r_high = ((1.0f) - ((1.0f + static_cast<float>(st)) / stacks));
+		uv_r_high = (0.5f - inner_radius) * uv_r_high + inner_radius;;
+
+		for (unsigned int i = 0; i < slices; i++) // slices
+		{
+			/* Some precomputations we need for both normals and positions */
+			const float ax = sin(circum_step*(i + 0));
+			const float ay = cos(circum_step*(i + 0));
+			const float bx = sin(circum_step*(i + 1));
+			const float by = cos(circum_step*(i + 1));
+
+			/* Create a quad.*/
+			this->tex_coord(uv_r_low * ax + 0.5f, uv_r_low*ay + 0.5f);
+			normal(glm::normalize(vec3(ax, ay, nz)));
+			this->vertex(rlow*ax, rlow*ay, zlow);
+
+			this->tex_coord(uv_r_low * bx + 0.5f, uv_r_low*by + 0.5f);
+			normal(glm::normalize(vec3(bx, by, nz)));
+			this->vertex(rlow*bx, rlow*by, zlow);
+
+			this->tex_coord(uv_r_high * bx + 0.5f, uv_r_high*by + 0.5f);
+			normal(glm::normalize(vec3(bx, by, nz)));
+			this->vertex(rhigh*bx, rhigh*by, zhigh);
+
+			this->tex_coord(uv_r_high * ax + 0.5f, uv_r_high*ay + 0.5f);
+			normal(glm::normalize(vec3(ax, ay, nz)));
+			this->vertex(rhigh*ax, rhigh*ay, zhigh);
+		}
+	}
+	return this->finish();
+}
+
+VertexData *Factory::create_disk(float innerRadius, float outerRadius, unsigned int slices, unsigned int loops)
+{
+
+	this->begin(TRIANGLES);
+	float circum_step = 2.0f*3.141595654f / slices;
+	float radius_step = (outerRadius - innerRadius) / loops;
+
+	normal(vec3(0, 0, 1));
+	for (unsigned int st = 0; st < loops; st++) // stacks
+	{
+		float rlow = innerRadius + st*radius_step;
+		float rhigh = innerRadius + (st + 1)*radius_step;
+		for (unsigned int i = 0; i < slices; i++) // slices
+		{
+
+			/* Some precomputations we need for both normals and positions*/
+			const float ax = sin(circum_step*(i + 0));
+			const float ay = cos(circum_step*(i + 0));
+			const float bx = sin(circum_step*(i + 1));
+			const float by = cos(circum_step*(i + 1));
+
+			/* Create a quad.*/
+
+			vec3 pos[4];
+			vec2 uv[4];
+			pos[0] = vec3(rlow*ax, rlow*ay, 0);
+			pos[1] = vec3(rlow*bx, rlow*by, 0);
+			pos[2] = vec3(rhigh*bx, rhigh*by, 0);
+			pos[3] = vec3(rhigh*ax, rhigh*ay, 0);
+
+			for (int i = 0; i < 4; i++)
+			{
+				uv[i] = vec2(pos[i].x / (2.0f * outerRadius) + 0.5f,
+							 pos[i].y / (2.0f * outerRadius) + 0.5f);
+			}
+
+			if (st != 0)
+			{
+				this->tex_coord(uv[0]);
+				this->vertex(pos[0]);
+				this->tex_coord(uv[1]);
+				this->vertex(pos[1]);
+				this->tex_coord(uv[2]);
+				this->vertex(pos[2]);
+			}
+			this->tex_coord(uv[0]);
+			this->vertex(pos[0]);
+			this->tex_coord(uv[2]);
+			this->vertex(pos[2]);
+			this->tex_coord(uv[3]);
+			this->vertex(pos[3]);
+		}
+	}
+	return this->finish();
+}
+
+void Factory::add_vertex(vec3 p, vec2 t, vec3 n, vec4 c)
+{
+	tex_coord(t);
+	normal(n);
+	color(c);
+	vertex(p);
+}
+
+
+#define vecIsNaN(v) (!(v.x==v.x))
+
+void Factory::add_triangle(vec3 p1, vec3 p2, vec3 p3, vec2 t1, vec2 t2, vec2 t3, vec3 n1, vec3 n2, vec3 n3, vec4 c1, vec4 c2, vec4 c3)
+{
+	vec3 n = glm::normalize(glm::cross(p2 - p1, p3 - p1));
+	if (vecIsNaN(n1))
+	{
+		n1 = n;
+	}
+	if (vecIsNaN(n2))
+	{
+		n2 = n;
+	}
+	if (vecIsNaN(n3))
+	{
+		n3 = n;
+	}
+
+	if (m_input_primitive == QUADS ||
+			m_input_primitive == QUAD_STRIP)
+		return;
+	if (m_input_primitive == LINES)
+	{
+		add_vertex(p1, t1, n1, c1);
+		add_vertex(p2, t2, n2, c2);
+
+		add_vertex(p2, t2, n2, c2);
+		add_vertex(p3, t3, n3, c3);
+
+		add_vertex(p3, t3, n3, c3);
+		add_vertex(p1, t1, n1, c1);
+	}
+
+	else if (m_input_primitive == LINE_STRIP)
+	{
+		this->m_current_mesh->push_back(RESET_PRIMITIVE);
+		add_vertex(p1, t1, n1, c1);
+		add_vertex(p2, t2, n2, c2);
+		add_vertex(p3, t3, n3, c3);
+		add_vertex(p1, t1, n1, c1);
+	}
+	else
+	{
+		if (m_input_primitive == TRIANGLE_STRIP)
+			this->m_current_mesh->push_back(RESET_PRIMITIVE);
+		add_vertex(p1, t1, n1, c1);
+		add_vertex(p2, t2, n2, c2);
+		add_vertex(p3, t3, n3, c3);
+	}
+}
+
+void Factory::addQuad(vec3 p1, vec3 p2, vec3 p3, vec3 p4, vec2 t1, vec2 t2, vec2 t3, vec2 t4, vec3 n1, vec3 n2, vec3 n3, vec3 n4, vec4 c1, vec4 c2, vec4 c3, vec4 c4)
+{
+	vec3 n = glm::normalize(glm::cross(p2 - p1, p3 - p1));
+	if (vecIsNaN(n1))
+	{
+		n1 = n;
+	}
+	if (vecIsNaN(n2))
+	{
+		n2 = n;
+	}
+	if (vecIsNaN(n3))
+	{
+		n3 = n;
+	}
+	if (vecIsNaN(n4))
+	{
+		n4 = n;
+	}
+
+	if (m_input_primitive == TRIANGLES)
+	{
+		add_vertex(p1, t1, n1, c1);
+		add_vertex(p2, t2, n2, c2);
+		add_vertex(p3, t3, n3, c3);
+
+		add_vertex(p1, t1, n1, c1);
+		add_vertex(p3, t3, n3, c3);
+		add_vertex(p4, t4, n4, c4);
+	}
+	if (m_input_primitive == QUADS)
+	{
+		add_vertex(p1, t1, n1, c1);
+		add_vertex(p2, t2, n2, c2);
+		add_vertex(p3, t3, n3, c3);
+		add_vertex(p4, t4, n4, c4);
+	}
+	else if (m_input_primitive == LINES)
+	{
+		add_vertex(p1, t1, n1, c1);
+		add_vertex(p2, t2, n2, c2);
+
+		add_vertex(p2, t2, n2, c2);
+		add_vertex(p3, t3, n3, c3);
+
+		add_vertex(p3, t3, n3, c3);
+		add_vertex(p4, t4, n4, c4);
+
+		add_vertex(p4, t4, n4, c4);
+		add_vertex(p1, t1, n1, c1);
+	}
+
+	else if (m_input_primitive == LINE_STRIP)
+	{
+		this->m_current_mesh->push_back(RESET_PRIMITIVE);
+		add_vertex(p1, t1, n1, c1);
+		add_vertex(p2, t2, n2, c2);
+		add_vertex(p3, t3, n3, c3);
+		add_vertex(p4, t4, n4, c4);
+		add_vertex(p1, t1, n1, c1);
+	}
+	else
+	{
+		if (m_input_primitive == TRIANGLE_STRIP ||
+				m_input_primitive == QUAD_STRIP)
+			this->m_current_mesh->push_back(RESET_PRIMITIVE);
+		add_vertex(p1, t1, n1, c1);
+		add_vertex(p2, t2, n2, c2);
+		add_vertex(p3, t3, n3, c3);
+		add_vertex(p4, t4, n4, c4);
+	}
+
+}
+#undef vecIsNaN
+}
+
