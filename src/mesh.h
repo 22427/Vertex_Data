@@ -3,6 +3,7 @@
 #include <map>
 #include <cstdint>
 #include <cstring>
+#define GLM_FORCE_RADIANS
 #include <glm/glm.hpp>
 #include <limits>
 #include <unordered_map>
@@ -65,26 +66,30 @@ struct Vertex
 	Vertex()
 	{
 		for(uint32_t i = 0 ; i < AID_COUNT;i++)
-			att_id[i] = -1;
+			att_id[i] = UINT32_MAX;
+		active_mask = (1<<AID_COUNT)-1;
 	}
 	union
 	{
 		struct
 		{
-			int32_t pos_id;
-			int32_t nrn_id;
-			int32_t tex_id;
-			int32_t clr_id;
-			int32_t tan_id;
-			int32_t bnm_id;
+			uint32_t pos_id;
+			uint32_t nrn_id;
+			uint32_t tex_id;
+			uint32_t clr_id;
+			uint32_t tan_id;
+			uint32_t bnm_id;
 		};
-		int32_t att_id[AID_COUNT];
+		uint32_t att_id[AID_COUNT];
 	};
+	uint32_t active_mask;
 
 	bool operator<(const Vertex& o) const
 	{
 		for(uint32_t i  = 0 ; i< AID_COUNT;i++)
 		{
+			if(active_mask& 1<<i || o.active_mask& 1<<i)
+				continue;
 			if(att_id[i] == o.att_id[i])
 				continue;
 			else
@@ -137,7 +142,7 @@ public:
 		auto it = ad.find(val);
 		if(it != ad.end())
 			return (*it).second;
-		const uint32_t id = (uint32_t) attribute_data[aid].size();
+		const uint32_t id = static_cast<uint32_t>(attribute_data[aid].size());
 		ad[val] = id;
 		attribute_data[aid].push_back(val);
 		return id;
