@@ -11,7 +11,8 @@ TEMPLATE = app
 
 SOURCES += \
     src/main.cpp \
-    src/vd.cpp
+    src/vd.cpp \
+    src/mesh.cpp
 
 CONFIG += c++11
 
@@ -22,5 +23,6 @@ DESTDIR = bin
 OBJECTS_DIR = obj
 
 HEADERS += \
-    src/vd.h
+    src/vd.h \
+    src/mesh.h
 
