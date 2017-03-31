@@ -11,6 +11,7 @@
 *.swp
 obj/*
 bin/*
+lib/*
 *~
 *.db
 Makefile

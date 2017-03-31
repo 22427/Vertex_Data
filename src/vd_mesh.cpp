@@ -1,12 +1,43 @@
-#include <mesh.h>
-
+#include <vd_mesh.h>
+#include <glm/geometric.hpp>
 #include <string>
 #include <sstream>
 #include <algorithm>
-#define GLM_FORCE_RADIANS
-#include <glm/vec2.hpp>
-#include <glm/vec3.hpp>
+#include <cstdint>
+#include <cstring>
 
+
+/******************************************************************************
+ *   Some utilities                                                           *
+ ******************************************************************************/
+namespace std
+{
+
+template<>
+struct less<glm::vec4>
+{
+	inline bool eq(const float& a,const float& b) const
+	{
+		return std::nextafter(a, std::numeric_limits<float>::lowest()) <= b
+			&& std::nextafter(a, std::numeric_limits<float>::max()) >= b;
+	}
+
+	size_t operator()(const glm::vec4 &a,const glm::vec4 &b) const
+	{
+		for(int i = 0 ; i < 4; i++)
+		{
+			if(eq(a[i],b[i])) continue;
+
+			return  a[i]<b[i];
+		}
+		return false;
+	}
+};
+
+}
+
+
+namespace vd {
 
 static inline void ltrim(std::string &s)
 {
@@ -32,6 +63,13 @@ std::string read_word(std::stringstream& ss)
 	}while(itm.empty() && ss);
 	return  itm;
 }
+
+
+
+
+/******************************************************************************
+ *   OBJ-Loader                                                               *
+ ******************************************************************************/
 
 bool MeshOPS::load_OBJ(Mesh &m, const std::string &path)
 {
@@ -80,7 +118,6 @@ bool MeshOPS::load_OBJ(Mesh &m, const std::string &path)
 				{
 					sscanf(v.c_str(),"%d",
 						   &(t[i].pos_id));
-
 				}
 				else if (m.active_mask == (AM_POSITION | AM_TEXCOORD))	// positions and texcoords
 				{
@@ -102,8 +139,7 @@ bool MeshOPS::load_OBJ(Mesh &m, const std::string &path)
 						   &(t[i].pos_id),
 						   &(t[i].tex_id),
 						   &(t[i].nrm_id));
-					t[i].tex_id--;
-					t[i].nrm_id--;
+					t[i].tex_id--;	t[i].nrm_id--;
 				}
 				t[i].pos_id--;
 				t[i].active_mask = m.active_mask ;
@@ -122,9 +158,8 @@ glm::vec4 get_weighted_normal(const Mesh&m, const uint32_t t_id)
 	const glm::vec4 A = (m.get_pos_data()[t[1].pos_id])- m.get_pos_data()[t[0].pos_id];
 	const glm::vec4 B = (m.get_pos_data()[t[2].pos_id])- m.get_pos_data()[t[0].pos_id];
 
-	const glm::vec3 a(A);//.x,A.y,A.z);
-	const glm::vec3 b(B);//.x,B.y,B.z);
-
+	const glm::vec3 a(A);
+	const glm::vec3 b(B);
 
 	const glm::vec3 cr = glm::cross(a,b);
 	float area = 0.5f* glm::length(cr);
@@ -132,6 +167,9 @@ glm::vec4 get_weighted_normal(const Mesh&m, const uint32_t t_id)
 	const float w = area/((glm::dot(a,a)*glm::dot(b,b)));
 	return glm::vec4(n*w,0.0f);
 }
+/******************************************************************************
+ *   Normal calculation                                                       *
+ ******************************************************************************/
 
 void MeshOPS::recalculate_normals(Mesh &m)
 {
@@ -157,13 +195,16 @@ void MeshOPS::recalculate_normals(Mesh &m)
 	m.active_mask |= AM_NORMAL;
 }
 
+/******************************************************************************
+ *   Tangent and Bitangent calculation                                        *
+ ******************************************************************************/
 
 void MeshOPS::recalculate_tan_btn(Mesh &m)
 {
 	m.get_tan_data().clear();
 	m.get_btn_data().clear();
 
-	std::map<Vertex,uint32_t,vertex_masked_comperator<AM_POSITION | AM_NORMAL | AM_TEXCOORD>> ids;
+	std::map<MeshVertex,uint32_t,vertex_masked_comperator<AM_POSITION | AM_NORMAL | AM_TEXCOORD>> ids;
 	auto& tans = m.get_tan_data();
 	auto& btns = m.get_btn_data();
 
@@ -197,7 +238,7 @@ void MeshOPS::recalculate_tan_btn(Mesh &m)
 			auto it = ids.find(t[j]);
 			if(it == ids.end())
 			{
-				const auto new_id =  tans.size();
+				const uint32_t new_id =  static_cast<uint32_t>(tans.size());
 				ids[t[j]] = new_id;
 				t[j].tan_id = t[j].btn_id =  new_id;
 				tans.push_back(tan);
@@ -251,4 +292,25 @@ Mesh MeshOPS::remove_double_attributes(const Mesh &m)
 		}
 	}
 	return r;
+}
+
+MeshVertex::MeshVertex()
+{
+	for(uint32_t i = 0 ; i < AID_COUNT;i++)
+		att_id[i] = UINT32_MAX;
+	active_mask = (1<<AID_COUNT)-1;
+}
+
+bool MeshVertex::operator<(const MeshVertex &o) const
+{
+	for(uint32_t i  = 0 ; i< AID_COUNT;i++)
+	{
+		if(att_id[i] == o.att_id[i])
+			continue;
+		else
+			return  att_id[i] < o.att_id[i];
+	}
+	return  false;
+}
+
 }

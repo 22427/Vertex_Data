@@ -1,28 +1,33 @@
+TEMPLATE = lib
+
+TARGET = vd
+CONFIG   += dll
 
 QT       += core
 
 QT       -= gui
 
-TARGET = vd
-CONFIG   += console
+
 CONFIG   -= app_bundle
 
-TEMPLATE = app
 
 SOURCES += \
     src/main.cpp \
     src/vd.cpp \
-    src/mesh.cpp
+    src/vd_mesh.cpp \
+    src/vd_mini.cpp
 
 CONFIG += c++11
 
 INCLUDEPATH += ./src ./
 
 
-DESTDIR = bin
+DESTDIR = lib
 OBJECTS_DIR = obj
 
 HEADERS += \
     src/vd.h \
-    src/mesh.h
+    src/vd_mesh.h \
+    src/vd_mini.h \
+    src/vd_dll.h
 

@@ -1,45 +1,17 @@
 #pragma once
-#include <glm/glm.hpp>
 #include <cstring>
 #include <fstream>
 
 #include <map>
 #include <vector>
-#include <glm/glm.hpp>
-#include <mesh.h>
+#define GLM_FORCE_RADIANS
+#include <glm/vec2.hpp>
+#include <glm/vec3.hpp>
+#include <vd_mesh.h>
+#include <vd_dll.h>
 
 
-#ifndef OFL_DLL_PUBLIC
-
-#if defined _WIN32 || defined __CYGWIN__
-#ifdef PT_BUILDING_DLL
-#ifdef __GNUC__
-#define OFL_DLL_PUBLIC __attribute__ ((dllexport))
-#else
-#define OFL_DLL_PUBLIC __declspec(dllexport) // Note: actually gcc seems to also supports this syntax.
-#endif
-#else
-#ifdef __GNUC__
-#define OFL_DLL_PUBLIC __attribute__ ((dllimport))
-#else
-#define OFL_DLL_PUBLIC __declspec(dllimport) // Note: actually gcc seems to also supports this syntax.
-#endif
-#endif
-#define OFL_DLL_LOCAL
-#else
-#if __GNUC__ >= 4
-#define OFL_DLL_PUBLIC __attribute__ ((visibility ("default")))
-#define OFL_DLL_LOCAL  __attribute__ ((visibility ("hidden")))
-#else
-#define OFL_DLL_PUBLIC
-#define OFL_DLL_LOCAL
-#endif
-#endif
-
-#endif
-
-
-
+namespace vd {
 
 typedef glm::vec2 vec2;
 typedef glm::vec3 vec3;
@@ -66,7 +38,7 @@ enum TypeID
 };
 
 
-class OFL_DLL_PUBLIC Type
+class VD_DLL_PUBLIC Type
 {
 public:
 	TypeID id;
@@ -159,7 +131,7 @@ enum Encoding
  * each vertex. This is designed to make it easy to set an Vertex attribute
  * pointer in opengl.
  */
-class  OFL_DLL_PUBLIC Attribute
+class  VD_DLL_PUBLIC Attribute
 {
 public:
 	AttributeID attribute_id;
@@ -234,7 +206,7 @@ public:
  * @brief The VertexConfiguration class Is a set of attributes resembling a
  * vertex.
  */
-class OFL_DLL_PUBLIC VertexConfiguration
+class VD_DLL_PUBLIC VertexConfiguration
 {
 public:
 	Attribute attributes[AID_COUNT];
@@ -291,7 +263,7 @@ public:
 /**
  * @brief The VertexData class represents vertex data in a renderable form.
  */
-class OFL_DLL_PUBLIC VertexData
+class VD_DLL_PUBLIC VertexData
 {
 private:
 	VertexConfiguration m_vtx_configuration;
@@ -362,7 +334,7 @@ public:
 	 * @param v The new Vertex
 	 * @return the index of the newly added vertex.
 	 */
-	uint push_back(const Vertex& v);
+	uint push_back(const MeshVertex& v);
 
 	/**
 	 * @brief index_type
@@ -467,7 +439,7 @@ public:
 };
 
 
-class OFL_DLL_PUBLIC VertexDataOPS
+class VD_DLL_PUBLIC VertexDataOPS
 {
 protected:
 public:
@@ -481,3 +453,5 @@ public:
 };
 
 
+
+}

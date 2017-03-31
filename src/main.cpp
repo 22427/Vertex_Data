@@ -9,7 +9,8 @@
 
 #include <glm/glm.hpp>
 
-#include <mesh.h>
+#include <vd_mesh.h>
+using namespace  vd;
 
 int main(int argc, char ** argv)
 {

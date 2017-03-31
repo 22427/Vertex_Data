@@ -4,6 +4,8 @@
 #include <algorithm>
 #include <sstream>
 
+namespace vd {
+
 
 
 /********* MATHS and other operations *****************************************/
@@ -491,7 +493,7 @@ void VertexDataOPS::pack_from_mesh(VertexData &vd, const Mesh *m)
 	// we use two maps one is coarse maping vertices by their indices to
 	// ids the oder is fine to map converted vertex values to indices.
 	std::map<void*,uint32_t,VtxComperator> fine(cmprtr);
-	std::map<Vertex,uint32_t,vertex_active_comperator> coarse;
+	std::map<MeshVertex,uint32_t,vertex_active_comperator> coarse;
 
 
 	// set all coareses to a unvalid index
@@ -571,4 +573,5 @@ void VertexDataOPS::pack_from_mesh(VertexData &vd, const Mesh *m)
 		}
 	}
 
+}
 }
