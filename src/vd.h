@@ -41,18 +41,11 @@
 
 
 
-
-namespace ofl
-{
 typedef glm::vec2 vec2;
 typedef glm::vec3 vec3;
 typedef glm::vec4 vec4;
 typedef uint8_t ubyte;
 typedef int8_t byte;
-
-
-
-
 
 /********* TYPE class dealing with different data types************************/
 
@@ -146,19 +139,20 @@ public:
 
 enum Primitive
 {
-	POINTS = 0x0000,			// == GL_POINTS
-	LINES = 0x0001,				// == GL_LINES
-	LINE_LOOP = 0x0002,		// == GL_LINE_LOOP
-	LINE_STRIP = 0x0003,		// == GL_LINE_STRIP
-	TRIANGLES = 0x0004,			// == GL_TRIANGLES
-	TRIANGLE_STRIP = 0x0005,	// == GL_TRIANGLE_STRIP
-	TRIANGLE_FAN = 0x0006,	// == GL_TRIANGLE_FAN
-	//QUADS = 0x0007,				// == GL_QUADS
-	//QUAD_STRIP = 0x0008,		// == GL_QUAD_STRIP
-	//POLYGON = 0x0009,			// == GL_POLYGON
+	PRIM_POINTS = 0x0000,			// == GL_POINTS
+	PRIM_LINES = 0x0001,			// == GL_LINES
+	PRIM_LINE_LOOP = 0x0002,		// == GL_LINE_LOOP
+	PRIM_LINE_STRIP = 0x0003,		// == GL_LINE_STRIP
+	PRIM_TRIANGLES = 0x0004,		// == GL_TRIANGLES
+	PRIM_TRIANGLE_STRIP = 0x0005,	// == GL_TRIANGLE_STRIP
+	PRIM_TRIANGLE_FAN = 0x0006,		// == GL_TRIANGLE_FAN
 };
 
-
+enum Encoding
+{
+	EN_NONE,
+	EN_NORM_SCALE, // if this encoding is set, the data is encoded as normalized int, but it needs to be scaled by the constant, which is then encoded as floats!
+};
 
 /**
  * @brief The Attribute class represents the configuration of a value stored for
@@ -169,19 +163,18 @@ class  OFL_DLL_PUBLIC Attribute
 {
 public:
 	AttributeID attribute_id;
+	Encoding encoding;
 	Type type;
 	uint32_t offset;
 	uint16_t elements;
-	bool normalized;
-	bool use_constant;
-
+	uint8_t normalized; // defacto bool
+	uint8_t use_constant; // defacto bool
 	ubyte constant[4*sizeof(float)];
+
 	size_t size() const;
-
-	uint32_t active_mask;
-
 	Attribute()
 	{
+		encoding= EN_NONE;
 		attribute_id=AID_COUNT;
 		elements = 0;
 		type = FLOAT;
@@ -246,20 +239,10 @@ class OFL_DLL_PUBLIC VertexConfiguration
 public:
 	Attribute attributes[AID_COUNT];
 	uint32_t active_mask;
-	uint32_t OFL_DLL_LOCAL size()
+	uint32_t m_size;
+	uint32_t size() const
 	{
-		uint32_t r_size = 0;
-		for(auto& a : attributes)
-		{
-			if(!a.use_constant)
-			{
-				a.offset = r_size;
-				r_size+= a.size();
-			}
-			else
-				a.offset = 0;
-		}
-		return r_size;
+		return m_size;
 	}
 
 	void set_attribute(const AttributeID id,
@@ -279,13 +262,13 @@ public:
 		if(constant)
 			memcpy(a.constant,constant,a.size());
 
-		uint32_t r_size = 0;
+		m_size = 0;
 		for(auto& a : attributes)
 		{
 			if(!a.use_constant)
 			{
-				a.offset = r_size;
-				r_size+= a.size();
+				a.offset = m_size;
+				m_size+= a.size();
 			}
 			else
 				a.offset = 0;
@@ -294,6 +277,7 @@ public:
 
 	VertexConfiguration()
 	{
+		m_size=0;
 		for(uint32_t i = 0 ; i< AID_COUNT;i++)
 			attributes[i].attribute_id=static_cast<AttributeID>(i);
 		active_mask=0;
@@ -310,17 +294,17 @@ public:
 class OFL_DLL_PUBLIC VertexData
 {
 private:
-	VertexConfiguration m_cfg;
+	VertexConfiguration m_vtx_configuration;
 	Primitive m_render_primitive;
 	Type m_index_type;
-
 	uint m_index_count;
-	uint m_index_reserve;
-	void* m_index_data;
+	uint m_vertex_count;
 
+
+	void* m_index_data;
+	uint m_index_reserve;
 
 	void* m_vertex_data;
-	uint m_vertex_count;
 	uint m_vertex_reserve;
 
 public:
@@ -352,7 +336,7 @@ public:
 	 * @brief vertex_configuration gives access to the vertex configuration
 	 * @return
 	 */
-	const VertexConfiguration& vertex_configuration() const {return m_cfg;}
+	const VertexConfiguration& vertex_configuration() const {return m_vtx_configuration;}
 	/**
 	 * @brief vertex_count
 	 * @return number of vertices stored.
@@ -370,7 +354,7 @@ public:
 	 */
 	void verties_null()
 	{
-		memset(m_vertex_data,0,m_vertex_reserve*m_cfg.size());
+		memset(m_vertex_data,0,m_vertex_reserve*m_vtx_configuration.size());
 	}
 
 	/**
@@ -399,6 +383,15 @@ public:
 	void indices_reserve(const uint c);
 
 	/**
+	 * @brief indices_clear set the index count to zero.
+	 * The reserved memory stays untouched.
+	 */
+	void indices_clear()
+	{
+		m_index_count = 0;
+	}
+
+	/**
 	 * @brief indices_nullwill set the whole reserved index storage to 0!
 	 */
 	void indices_null()
@@ -423,6 +416,15 @@ public:
 	 * @return The vertex data.
 	 */
 	const void* vertex_data()const{return  m_vertex_data;}
+
+	/**
+	 * @brief indices_clear set the index count to zero.
+	 * The reserved memory stays untouched.
+	 */
+	void vertex_clear()
+	{
+		m_vertex_count = 0;
+	}
 
 	/**
 	 * @brief indices  write access to the index data.
@@ -470,12 +472,12 @@ class OFL_DLL_PUBLIC VertexDataOPS
 protected:
 public:
 
-	static VertexData read(std::ifstream& f);
-	static VertexData read(const std::string& path);
-	static bool write(const VertexData* vd, std::ofstream& f);
-	static bool write(const VertexData* vd, const std::string& path);
+	static bool read(VertexData &vd, std::ifstream& f);
+	static bool read(VertexData &vd, const std::string& path);
+	static bool write(const VertexData &vd, std::ofstream& f);
+	static bool write(const VertexData &vd, const std::string& path);
 
-	static void pack_from_mesh(VertexData& vd, const Mesh* m);
+	static void pack_from_mesh(VertexData &vd, const Mesh *m);
 };
 
-}
+

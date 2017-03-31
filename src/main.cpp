@@ -9,15 +9,14 @@
 
 #include <glm/glm.hpp>
 
+#include <mesh.h>
 
 int main(int argc, char ** argv)
 {
-	glm::vec3 v;
-	std::string str = "1  2";
-	std::stringstream sstr(str);
+	Mesh m;
+	MeshOPS::load_OBJ(m,"test.obj");
+	printf("cfg: %d\n", sizeof(VertexConfiguration));
+	printf("attrib: %d\n", sizeof(Attribute));
 
-	sstr>>v.x>>v.y>>v.z;
-
-	std::cout<<v.x<<","<<v.y<<","<<v.z<<std::endl;
 	return  0;
 }
