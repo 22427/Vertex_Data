@@ -1,10 +1,14 @@
 TEMPLATE = lib
 
 TARGET = vd
-CONFIG   += dll
 
-QT       += core
+#CONFIG   += dll
+CONFIG += staticlib
+CONFIG   -= qt
+DEFINES  += PT_BUILDING_DLL
 
+
+QT       -= core
 QT       -= gui
 
 
@@ -19,15 +23,15 @@ SOURCES += \
 
 CONFIG += c++11
 
-INCLUDEPATH += ./src ./
+INCLUDEPATH += ./include
 
 
 DESTDIR = lib
 OBJECTS_DIR = obj
 
 HEADERS += \
-    src/vd.h \
-    src/vd_mesh.h \
-    src/vd_mini.h \
-    src/vd_dll.h
+	include/vd.h \
+	include/vd_mesh.h \
+	include/vd_mini.h \
+	include/vd_dll.h
 
