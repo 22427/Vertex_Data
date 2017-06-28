@@ -38,7 +38,7 @@ enum TypeID
 };
 
 
-class VD_DLL_PUBLIC Type
+class DLL_PUBLIC Type
 {
 public:
 	TypeID id;
@@ -131,7 +131,7 @@ enum Encoding
  * each vertex. This is designed to make it easy to set an Vertex attribute
  * pointer in opengl.
  */
-class  VD_DLL_PUBLIC Attribute
+class  DLL_PUBLIC Attribute
 {
 public:
 	AttributeID attribute_id;
@@ -206,7 +206,7 @@ public:
  * @brief The VertexConfiguration class Is a set of attributes resembling a
  * vertex.
  */
-class VD_DLL_PUBLIC VertexConfiguration
+class DLL_PUBLIC VertexConfiguration
 {
 public:
 	Attribute attributes[AID_COUNT];
@@ -263,7 +263,7 @@ public:
 /**
  * @brief The VertexData class represents vertex data in a renderable form.
  */
-class VD_DLL_PUBLIC VertexData
+class DLL_PUBLIC VertexData
 {
 private:
 	VertexConfiguration m_vtx_configuration;
@@ -439,7 +439,7 @@ public:
 };
 
 
-class VD_DLL_PUBLIC VertexDataOPS
+class DLL_PUBLIC VertexDataOPS
 {
 protected:
 public:

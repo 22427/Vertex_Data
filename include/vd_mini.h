@@ -4,7 +4,7 @@
 #include <cstdint>
 
 namespace vd {
-struct VD_DLL_PUBLIC MiniVertex
+struct DLL_PUBLIC MiniVertex
 {
 	int16_t pos[3];
 	int16_t nrm[3];
@@ -13,7 +13,7 @@ struct VD_DLL_PUBLIC MiniVertex
 };
 
 
-class VD_DLL_PUBLIC MiniVD
+class DLL_PUBLIC MiniVD
 {
 public:
 	uint32_t data_size;
@@ -29,7 +29,7 @@ public:
 };
 
 
-class VD_DLL_PUBLIC MiniVertexDataOPS
+class DLL_PUBLIC MiniVertexDataOPS
 {
 public:
 

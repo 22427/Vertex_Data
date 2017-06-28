@@ -42,7 +42,7 @@ enum AttributeMask
 /**
  * @brief The MeshVertex struct represents a Vertex as a set of AttributeIDs
  */
-struct VD_DLL_PUBLIC MeshVertex
+struct DLL_PUBLIC MeshVertex
 {
 	uint32_t active_mask;
 	union
@@ -77,7 +77,7 @@ struct VD_DLL_PUBLIC MeshVertex
 /**
  * @brief The Triangle class represents a tripplet of MeshVertices
  */
-class VD_DLL_PUBLIC Triangle
+class DLL_PUBLIC Triangle
 {
 protected:
 	MeshVertex vertices[3];
@@ -98,7 +98,7 @@ public:
  * @brief The Mesh class consist of a set of attribute lists, and one Triangle
  * list refering to the different attribute lists.
  */
-class VD_DLL_PUBLIC Mesh
+class DLL_PUBLIC Mesh
 {
 public:
 	uint32_t active_mask;
@@ -124,7 +124,7 @@ public:
 /**
  * @brief Operations dealing with meshes.
  */
-class VD_DLL_PUBLIC MeshOPS
+class DLL_PUBLIC MeshOPS
 {
 public:
 	static bool load_OBJ(Mesh& m, const std::string& path);
@@ -137,7 +137,7 @@ public:
 
 
 template<uint32_t M = AM_ALL>
-struct VD_DLL_PUBLIC vertex_masked_comperator
+struct DLL_PUBLIC vertex_masked_comperator
 {
 	size_t operator()(const MeshVertex &a,const MeshVertex &b) const
 	{
@@ -154,7 +154,7 @@ struct VD_DLL_PUBLIC vertex_masked_comperator
 	}
 };
 
-struct VD_DLL_PUBLIC vertex_active_comperator
+struct DLL_PUBLIC vertex_active_comperator
 {
 	size_t operator()(const MeshVertex &a,const MeshVertex &b) const
 	{

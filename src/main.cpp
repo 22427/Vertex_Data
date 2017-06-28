@@ -1,4 +1,4 @@
-#ifndef PT_BUILDING_DLL
+#ifndef BUILDING_DLL
 #include <cstdio>
 #include <cstdint>
 #include <algorithm>
