@@ -1,12 +1,13 @@
 #include <vd_mesh.h>
 #include <glm/geometric.hpp>
 #include <string>
+#include <fstream>
 #include <sstream>
 #include <algorithm>
 #include <cstdint>
 #include <cstring>
 
-
+#include <algorithm>
 /******************************************************************************
  *   Some utilities                                                           *
  ******************************************************************************/
@@ -66,10 +67,20 @@ std::string read_word(std::stringstream& ss)
 
 
 
+bool MeshOPS::load(Mesh& m, const std::string& path)
+{
+	std::string ext = path.substr(path.find_last_of('.')+1);
+	for(char &c : ext) c= toupper(c);
+	if(ext == "OBJ")
+		return MeshOPS::load_OBJ(m,path);
+	else if(ext == "OFF")
+		return MeshOPS::load_OFF(m,path);
+	return false;
+}
 
 /******************************************************************************
  *   OBJ-Loader                                                               *
- ******************************************************************************/
+ *****************************************************************************/
 
 bool MeshOPS::load_OBJ(Mesh &m, const std::string &path)
 {
@@ -152,6 +163,69 @@ bool MeshOPS::load_OBJ(Mesh &m, const std::string &path)
 }
 
 
+/******************************************************************************
+ *   OFF-Loader                                                               *
+ *****************************************************************************/
+
+bool MeshOPS::load_OFF(Mesh& m, const std::string& path)
+{
+	std::fstream f;
+	f.open(path);
+	if(!f.is_open())
+		return  false;
+
+	std::string line;
+	glm::vec4 v(0,0,0,1);
+	Triangle t;
+	m.active_mask = AM_POSITION;
+
+	std::getline(f,line);
+	trim(line);
+	if(line != "OFF")
+		return false;
+	std::getline(f,line);
+	
+	int n_vert = 0;
+	int n_face = 0;
+	int n_edge = 0;
+	std::stringstream ls(line);
+	ls>>n_vert>>n_face>>n_edge;
+
+	m.get_pos_data().reserve(n_vert);
+	m.triangles.reserve(n_face);
+
+	for(int i = 0 ; i< n_vert;i++)
+	{
+		if(!std::getline(f,line))
+		{
+			m.get_pos_data().clear();
+			return false;
+		}
+				
+		std::stringstream ls(line);
+		ls>>v.x>>v.y>>v.z;
+		m.get_pos_data().push_back(v);	
+	}
+	for( int i = 0 ; i< n_face;i++)
+	{
+		if(!std::getline(f,line))
+		{
+			m.get_pos_data().clear();
+			return false;
+		}
+				
+		std::stringstream ls(line);
+		int q=0;
+		ls>>q;
+		if(q!=3)
+			return false;
+		for(int j = 0; j<3;j++)			
+			ls>>t[j].pos_id;
+		m.triangles.push_back(t);
+	}
+	return true;
+
+}
 glm::vec4 get_weighted_normal(const Mesh&m, const uint32_t t_id)
 {
 	const auto t  = m.triangles[t_id];
@@ -166,6 +240,41 @@ glm::vec4 get_weighted_normal(const Mesh&m, const uint32_t t_id)
 	auto n = glm::normalize(cr);
 	const float w = area/((glm::dot(a,a)*glm::dot(b,b)));
 	return glm::vec4(n*w,0.0f);
+}
+
+
+bool MeshOPS::write(const Mesh&m, const std::string& path)
+{
+	std::string ext = path.substr(path.find_last_of('.')+1);
+	for(char  &c : ext) c= toupper(c);
+	if(ext == "OFF")
+	{
+		return MeshOPS::write_OFF(m,path);
+	}
+	return false;
+}
+
+bool MeshOPS::write_OFF(const Mesh& m, const std::string& path)
+{
+	std::ofstream f (path, std::ofstream::out);
+	
+	if(!f.is_open())
+		return false;
+	f<<"OFF\n"<<m.get_pos_data().size()<<" "<<m.triangles.size()<<" 0\n";
+
+	for( const auto& v : m.get_pos_data())
+	{
+		f<<v.x<<" "<<v.y<<" "<<v.z<<"\n";
+	}
+	for( const auto& t : m.triangles)
+	{
+		f<<"3";
+		for(int i = 0 ; i< 3;i++)
+			f<<" "<<t[i].pos_id;
+		f<<"\n";
+	}
+
+	return true;
 }
 /******************************************************************************
  *   Normal calculation                                                       *

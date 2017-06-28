@@ -42,7 +42,7 @@ template<typename T>
 inline typename std::enable_if<std::is_signed<T>::value, T>::type
 float_to_nint(const float f)
 {
-	return static_cast<T>(f*((1<<((sizeof(T)*8)-1))-1));
+	return static_cast<T>(f*((1L<<((sizeof(T)*8)-1))-1));
 }
 
 
@@ -68,7 +68,7 @@ template<typename T>
 inline typename std::enable_if<std::is_signed<T>::value, float>::type
 nint_to_float(const T x)
 {
-	const T t = ((1<<((sizeof(T)*8)-1))-1);
+	const T t = ((1L<<((sizeof(T)*8)-1))-1);
 	return std::max(static_cast<float>(x)/t,-1.0f);
 }
 
@@ -188,6 +188,22 @@ double Type::min() const
 	}
 	return  0;
 }
+double Type::lowest() const
+{
+	switch (id)
+	{
+	case BYTE: return std::numeric_limits<int8_t>::lowest();
+	case UNSIGNED_BYTE: return std::numeric_limits<uint8_t>::lowest();
+	case SHORT: return std::numeric_limits<int16_t>::lowest();
+	case UNSIGNED_SHORT: return std::numeric_limits<uint16_t>::lowest();
+	case INT: return std::numeric_limits<int32_t>::lowest();
+	case UNSIGNED_INT: return std::numeric_limits<uint32_t>::lowest();
+	case FLOAT: return static_cast<double>(std::numeric_limits<float>::lowest());
+	case DOUBLE: return std::numeric_limits<double>::lowest();
+	case INVALID: static_assert(true,"unknown type!");
+	}
+	return  0;
+}
 
 
 size_t Attribute::size() const
@@ -227,65 +243,35 @@ void Attribute::write_constant(const vec4 &v)
 
 void *Attribute::convert(void *dst, const glm::vec4 &v) const
 {
+#define CONV(T) \
+		T* d = reinterpret_cast<T*>(dst);\
+		for(int32_t i = 0; i < elements; i++){\
+			*d= normalized? float_to_nint<T>(v[i]): static_cast<T>(v[i]);\
+			d++;}return d
+
 	if( type == BYTE)
 	{
-		byte* d = reinterpret_cast<byte*>(dst);
-		for(int32_t i = 0; i < elements; i++)
-		{
-			*d= normalized? float_to_nint<byte>(v[i]): static_cast<byte>(v[i]);
-			d++;
-		}
-		return d;
+		CONV(int8_t);
 	}
 	if( type == UNSIGNED_BYTE)
 	{
-		uint8_t* d = reinterpret_cast<uint8_t*>(dst);
-		for(int32_t i = 0; i < elements; i++)
-		{
-			*d= normalized? float_to_nint<uint8_t>(v[i]): static_cast<uint8_t>(v[i]);
-			d++;
-		}
-		return d;
+		CONV(uint8_t);
 	}
 	if( type == SHORT)
 	{
-		int16_t* d = reinterpret_cast<int16_t*>(dst);
-		for(int32_t i = 0; i < elements; i++)
-		{
-			*d= normalized? float_to_nint<int16_t>(v[i]): static_cast<int16_t>(v[i]);
-			d++;
-		}
-		return d;
+		CONV(int16_t);
 	}
 	if( type == UNSIGNED_SHORT)
 	{
-		uint16_t* d = reinterpret_cast<uint16_t*>(dst);
-		for(int32_t i = 0; i < elements; i++)
-		{
-			*d= normalized? float_to_nint<uint16_t>(v[i]): static_cast<uint16_t>(v[i]);
-			d++;
-		}
-		return d;
+		CONV(uint16_t);
 	}
 	if( type == INT)
 	{
-		uint32_t* d = reinterpret_cast<uint32_t*>(dst);
-		for(int32_t i = 0; i < elements; i++)
-		{
-			*d= normalized? float_to_nint<uint32_t>(v[i]): static_cast<uint32_t>(v[i]);
-			d++;
-		}
-		return d;
+		CONV(int32_t);
 	}
 	if( type == UNSIGNED_INT)
 	{
-		int32_t* d = reinterpret_cast<int32_t*>(dst);
-		for(int32_t i = 0; i < elements; i++)
-		{
-			*d= normalized? float_to_nint<int32_t>(v[i]): static_cast<int32_t>(v[i]);
-			d++;
-		}
-		return d;
+		CONV(uint32_t);
 	}
 	if( type == FLOAT)
 	{
@@ -299,7 +285,57 @@ void *Attribute::convert(void *dst, const glm::vec4 &v) const
 	}
 
 	return dst;
+#undef CONV
 }
+
+const void* Attribute::convert(const void* src, glm::vec4& v) const
+{
+
+#define RECONV(T) \
+		const T* d = reinterpret_cast<const T*>(src); \
+		for(int32_t i = 0; i < elements; i++) {\
+			v[i]= normalized? nint_to_float<T>(*d): static_cast<float>(*d);\
+			d++;}return d
+	
+	if( type == BYTE)
+	{
+		RECONV(byte);
+	}
+	if( type == UNSIGNED_BYTE)
+	{
+		RECONV(uint8_t);
+	}
+	if( type == SHORT)
+	{
+		RECONV(int16_t);
+	}
+	if( type == UNSIGNED_SHORT)
+	{
+		RECONV(uint16_t);
+	}
+	if( type == INT)
+	{
+		RECONV(int32_t);
+	}
+	if( type == UNSIGNED_INT)
+	{
+		RECONV(uint32_t);
+	}
+	if( type == FLOAT)
+	{
+		const float* d = reinterpret_cast<const float*>(src);
+		for(int32_t i = 0; i < elements; i++)
+		{
+			v[i]=*d;
+			d++;
+		}
+		return d;
+	}
+#undef RECONV
+	return src;
+
+}
+
 
 VertexData::VertexData(Primitive primitive,
 					   VertexConfiguration cfg,
@@ -573,5 +609,9 @@ void VertexDataOPS::pack_from_mesh(VertexData &vd, const Mesh *m)
 		}
 	}
 
+}
+void VertexDataOPS::pack_to_mesh(const VertexData &vd, Mesh& m)
+{
+	// TODO
 }
 }

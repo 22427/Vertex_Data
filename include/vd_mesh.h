@@ -28,13 +28,12 @@ enum AttributeID
 
 enum AttributeMask
 {
-	AM_POSITION =1,
-	AM_NORMAL=2,
-	AM_TEXCOORD=4,
-	AM_COLOR=8,
-	AM_TANGENT=16,
-	AM_BINORMAL=32,
-
+	AM_POSITION =1<<AID_POSITION,
+	AM_NORMAL=1<<AID_NORMAL,
+	AM_TEXCOORD=1<<AID_TEXCOORD,
+	AM_COLOR=1<<AID_COLOR,
+	AM_TANGENT=1<<AID_TANGENT,
+	AM_BINORMAL=1<<AID_BINORMAL,
 	AM_ALL =  (1<<AID_COUNT)-1,
 };
 
@@ -127,7 +126,13 @@ public:
 class DLL_PUBLIC MeshOPS
 {
 public:
+	static bool load(Mesh& m, const std::string& path);
 	static bool load_OBJ(Mesh& m, const std::string& path);
+	static bool load_OFF(Mesh& m, const std::string& path);
+	
+	static bool write(const Mesh& m, const std::string& path);
+	static bool write_OFF(const Mesh& m, const std::string& path);
+	
 	static void recalculate_normals(Mesh& m);
 	static void recalculate_tan_btn(Mesh& m);
 

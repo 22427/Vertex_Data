@@ -1,1 +1,1 @@
- -Iinclude  -DNDEBUG -std=c++11
+-I./include   -DNDEBUG -std=c++11

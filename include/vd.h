@@ -199,6 +199,7 @@ public:
 	}
 
 	void* convert(void* dst, const glm::vec4& v) const;
+	const void* convert(const void* src, glm::vec4& v) const;
 
 };
 
@@ -450,6 +451,7 @@ public:
 	static bool write(const VertexData &vd, const std::string& path);
 
 	static void pack_from_mesh(VertexData &vd, const Mesh *m);
+	static void pack_to_mesh(const VertexData &vd, Mesh& m);
 };
 
 

@@ -14,5 +14,4 @@ bin/*
 lib/*
 *~
 *.db
-Makefile
 *.stash
