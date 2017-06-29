@@ -74,7 +74,9 @@ endif
 ###############################################################################
 
 # ADD libraries to LINK
-LINK += $(LIBRARIES) 
+LINK += $(LIBRARIES)  
+# add origin to LD_PATH ... I think this is handy
+LDFLAGS += '-Wl,-R$$ORIGIN'
 
 # Set binary name
 BIN_NAME= $(PROJECT_NAME)

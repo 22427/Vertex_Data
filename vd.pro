@@ -1,18 +1,20 @@
-TEMPLATE = lib
+TEMPLATE = app
+#CONFIG   += dll
+#CONFIG += staticlib
+#DEFINES  += BUILDING_DLL
 
 TARGET = vd
 
-#CONFIG   += dll
-CONFIG += staticlib
+
 CONFIG   -= qt
-DEFINES  += PT_BUILDING_DLL
+CONFIG   -= app_bundle
+
 
 
 QT       -= core
 QT       -= gui
 
 
-CONFIG   -= app_bundle
 
 
 SOURCES += \
@@ -26,7 +28,7 @@ CONFIG += c++11
 INCLUDEPATH += ./include
 
 
-DESTDIR = lib
+DESTDIR = bin
 OBJECTS_DIR = obj
 
 HEADERS += \
@@ -35,3 +37,4 @@ HEADERS += \
 	include/vd_mini.h \
 	include/vd_dll.h
 
+MAKEFILE = Makefile_QT
