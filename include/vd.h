@@ -7,9 +7,9 @@
 #define GLM_FORCE_RADIANS
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
-#include <vd_mesh.h>
-#include <vd_dll.h>
-
+#include "vd_mesh.h"
+#include "vd_dll.h"
+#include <limits>
 
 namespace vd {
 
@@ -18,7 +18,61 @@ typedef glm::vec3 vec3;
 typedef glm::vec4 vec4;
 typedef uint8_t ubyte;
 typedef int8_t byte;
+}
+namespace std {
+template <> struct hash<glm::vec2>
+{
+	size_t operator()(const glm::vec2 & x) const
+	{
+		const uint32_t* d = reinterpret_cast<const uint32_t*>(&(x.x));
+		if(sizeof (size_t) >= 8)
+		{
+			size_t r =(d[0]);
+			r= r<<32;
+			r |= d[1];
+			return r;
+		}
+		return ((d[0]*73856093)^(19349663*d[1]))%(numeric_limits<size_t>::max());
+	}
+};
 
+template <> struct hash<glm::vec3>
+{
+	size_t operator()(const glm::vec3 & x) const
+	{
+		const uint32_t* d = reinterpret_cast<const uint32_t*>(&(x.x));
+		if(sizeof (size_t) >= 8)
+		{
+			size_t r =(d[0]);
+			r=r<<32;
+			r |= d[1];
+			r ^= d[2];
+			return r;
+		}
+		return ((d[0]*73856093)^(19349663*d[1])^(83492791*d[2]))%(numeric_limits<size_t>::max());
+	}
+};
+
+
+template <> struct hash<glm::vec4>
+{
+	size_t operator()(const glm::vec4 & x) const
+	{
+		const uint32_t* d = reinterpret_cast<const uint32_t*>(&(x.x));
+		if(sizeof (size_t) >= 8)
+		{
+			size_t r =(d[0]^d[1]);
+			r = r<<32;
+			r |= d[2]^d[3];
+			return r;
+		}
+		return ((d[0]*73856093)^(19349663*d[1])^(83492791*d[2])^(15495323*d[3]))%(numeric_limits<size_t>::max());
+	}
+};
+
+}
+
+namespace vd {
 /********* TYPE class dealing with different data types************************/
 
 enum TypeID
@@ -100,10 +154,17 @@ public:
 	double max() const;
 
 	/**
-	 * @brief min gives the minimal value a variable of this type can store
+	 * @brief min gives the minimal positive value a variable of this type can
+	 * store
 	 * @return the min value in double
 	 */
 	double min() const;
+	/**
+	 * @brief lowest gives the absolute lowest value a variable of this type can
+	 * store
+	 * @return  the lowest value in double
+	 */
+	double lowest() const;
 };
 
 
@@ -175,7 +236,7 @@ public:
 	}
 	void write_constant(const float v)
 	{
-		 write_constant(vec4(v,0.0f,0.0f,0.0f));
+		write_constant(vec4(v,0.0f,0.0f,0.0f));
 	}
 
 
@@ -291,8 +352,8 @@ public:
 	 * @param res_vtx number of vertices you wish to reserve for
 	 * @param res_idx number of indices you wish to reserve for
 	 */
-	VertexData(Primitive primitive,
-			   VertexConfiguration cfg,
+	VertexData(Primitive primitive = PRIM_TRIANGLES,
+			   VertexConfiguration cfg = VertexConfiguration(),
 			   const Type index_type = Type(UNSIGNED_SHORT),
 			   const uint res_vtx = 0,
 			   const uint res_idx = 0);
@@ -314,13 +375,22 @@ public:
 	 * @brief vertex_count
 	 * @return number of vertices stored.
 	 */
+
 	const uint& vertex_count()const{return m_vertex_count;}
-	uint& vertex_count(){return m_vertex_count;}
 	/**
-	 * @brief vertices_reserve will allocate memory to holf at least c vertices
+	 * @brief vertices_reserve will allocate memory to hold at least c vertices
 	 * @param c
 	 */
 	void vertices_reserve(const uint c);
+
+	/**
+	 * @brief vertices_resize will (re)allocate memory for exactly c vertices.
+	 * the vertex count will be set accordingly.
+	 * @param c
+	 */
+	void vertices_resize(const uint c);
+
+
 
 	/**
 	 * @brief verties_null will set the whole reserved vertex space to 0!

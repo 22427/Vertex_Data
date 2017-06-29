@@ -8,7 +8,7 @@
 #include <map>
 #include <fstream>
 
-#include <vd_dll.h>
+#include "vd_dll.h"
 
 namespace vd {
 

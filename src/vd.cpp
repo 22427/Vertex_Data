@@ -1,9 +1,9 @@
-#include "vd.h"
+#include "../include/vd.h"
 #define GLM_FORCE_RADIANS
 #include <glm/gtx/norm.hpp>
 #include <algorithm>
 #include <sstream>
-
+#include <unordered_map>
 namespace vd {
 
 
@@ -244,10 +244,10 @@ void Attribute::write_constant(const vec4 &v)
 void *Attribute::convert(void *dst, const glm::vec4 &v) const
 {
 #define CONV(T) \
-		T* d = reinterpret_cast<T*>(dst);\
-		for(int32_t i = 0; i < elements; i++){\
-			*d= normalized? float_to_nint<T>(v[i]): static_cast<T>(v[i]);\
-			d++;}return d
+	T* d = reinterpret_cast<T*>(dst);\
+	for(int32_t i = 0; i < elements; i++){\
+	*d= normalized? float_to_nint<T>(v[i]): static_cast<T>(v[i]);\
+	d++;}return d
 
 	if( type == BYTE)
 	{
@@ -292,10 +292,10 @@ const void* Attribute::convert(const void* src, glm::vec4& v) const
 {
 
 #define RECONV(T) \
-		const T* d = reinterpret_cast<const T*>(src); \
-		for(int32_t i = 0; i < elements; i++) {\
-			v[i]= normalized? nint_to_float<T>(*d): static_cast<float>(*d);\
-			d++;}return d
+	const T* d = reinterpret_cast<const T*>(src); \
+	for(int32_t i = 0; i < elements; i++) {\
+	v[i]= normalized? nint_to_float<T>(*d): static_cast<float>(*d);\
+	d++;}return d
 	
 	if( type == BYTE)
 	{
@@ -367,30 +367,32 @@ void VertexData::vertices_reserve(const uint c)
 	if(m_vertex_reserve < c)
 	{
 		m_vertex_reserve = c;
-		if(!m_vertex_data)
-		{
-			m_vertex_data = static_cast<ubyte*>(malloc(c*m_vtx_configuration.size()));
-		}
-		else
-		{
-			m_vertex_data = static_cast<ubyte*>(realloc(m_vertex_data,m_vertex_reserve*m_vtx_configuration.size()));
-		}
+		m_vertex_data =static_cast<ubyte*>(realloc(m_vertex_data,
+												   m_vertex_reserve*
+												   m_vtx_configuration.size()));
 	}
 }
+
+void VertexData::vertices_resize(const uint c)
+{
+	m_vertex_reserve = c;
+	m_vertex_data =static_cast<ubyte*>(realloc(m_vertex_data,
+											   m_vertex_reserve*
+											   m_vtx_configuration.size()));
+	m_vertex_count = c;
+}
+
+
+
 
 void VertexData::indices_reserve(const uint c)
 {
 	if(m_index_reserve < c)
 	{
 		m_index_reserve = c;
-		if(!m_index_data)
-		{
-			m_index_data = static_cast<ubyte*>(malloc(c*m_index_type.size()));
-		}
-		else
-		{
-			m_index_data = static_cast<ubyte*>(realloc(m_index_data,m_index_reserve*m_index_type.size()));
-		}
+		m_index_data = static_cast<ubyte*>(realloc(m_index_data,
+												   m_index_reserve*
+												   m_index_type.size()));
 	}
 }
 
@@ -407,16 +409,20 @@ void VertexData::push_back(const uint32_t &i)
 		}
 		else
 		{
-			const auto to_reserve = std::min(m_index_reserve*2u,m_index_reserve+8u);
+			const auto to_reserve = std::min(m_index_reserve*2u,
+											 m_index_reserve+8u);
 			indices_reserve(to_reserve);
 		}
 	}
 
 	switch (m_index_type.id)
 	{
-	case UNSIGNED_BYTE: static_cast<uint8_t*>(m_index_data)[m_index_count] = static_cast<uint8_t>(i);break;
-	case UNSIGNED_SHORT: static_cast<uint16_t*>(m_index_data)[m_index_count] = static_cast<uint16_t>(i);break;
-	case UNSIGNED_INT: static_cast<uint32_t*>(m_index_data)[m_index_count] = static_cast<uint32_t>(i);break;
+	case UNSIGNED_BYTE: static_cast<uint8_t*>(m_index_data)[m_index_count]
+				= static_cast<uint8_t>(i);break;
+	case UNSIGNED_SHORT: static_cast<uint16_t*>(m_index_data)[m_index_count]
+				= static_cast<uint16_t>(i);break;
+	case UNSIGNED_INT: static_cast<uint32_t*>(m_index_data)[m_index_count]
+				= static_cast<uint32_t>(i);break;
 	case BYTE:case SHORT:case INT: case FLOAT: case DOUBLE: case INVALID:
 		static_assert(true, "invalid index type!!!");
 	}
@@ -475,15 +481,17 @@ struct VtxComperator
 
 bool VertexDataOPS::read(VertexData &vd,std::ifstream &f)
 {
-	f.read((char*)(&(vd.m_vtx_configuration)),sizeof(VertexConfiguration));
+	f.read((char*)&(vd.m_vtx_configuration),sizeof(VertexConfiguration));
 	f.read((char*)&(vd.m_render_primitive),sizeof(Primitive));
 	f.read((char*)&(vd.m_index_type),sizeof(Type));
 	f.read((char*)&(vd.m_index_count),sizeof(uint32_t));
 	f.read((char*)&(vd.m_vertex_count),sizeof(uint32_t));
 	vd.indices_reserve(vd.m_index_count);
 	vd.vertices_reserve(vd.m_vertex_count);
-	f.read((char*)&(vd.m_index_data),vd.index_count()*vd.index_type().size());
-	f.read((char*)&(vd.m_vertex_data),vd.vertex_count()*vd.m_vtx_configuration.size());
+	f.read(	(char*)(vd.m_index_data),
+			vd.index_count()*vd.index_type().size());
+	f.read(	(char*)(vd.m_vertex_data),
+			vd.vertex_count()*vd.m_vtx_configuration.size());
 	return true;
 }
 
@@ -505,8 +513,8 @@ bool VertexDataOPS::write(const VertexData &vd, std::ofstream &f)
 	f.write((char*)&(vd.m_index_type),sizeof(Type));
 	f.write((char*)&(vd.m_index_count),sizeof(uint32_t));
 	f.write((char*)&(vd.m_vertex_count),sizeof(uint32_t));
-	f.write((char*)&(vd.m_index_data),vd.index_count()*vd.index_type().size());
-	f.write((char*)&(vd.m_vertex_data),vd.vertex_count()*vd.m_vtx_configuration.size());
+	f.write((char*)(vd.m_index_data),vd.index_count()*vd.index_type().size());
+	f.write((char*)(vd.m_vertex_data),vd.vertex_count()*vd.m_vtx_configuration.size());
 	return  true;
 }
 
@@ -519,16 +527,43 @@ bool VertexDataOPS::write(const VertexData &vd, const std::string &path)
 	return write(vd,f);
 }
 
+class FineVertex
+{
+public:
+	void* data;
+	size_t s;
+
+	FineVertex(size_t s):data(nullptr),s(s)
+	{
+		data = malloc(s);
+	}
+	FineVertex(const FineVertex& o)
+	{
+		s = o.s;
+		data = malloc(s);
+		memcpy(data,o.data,s);
+	}
+
+	~FineVertex()
+	{
+		if(data)
+			free(data);
+	}
+
+	bool operator<(const FineVertex& o)const
+	{
+		if(s!= o.s)
+			return s<o.s;
+		return memcmp(data,o.data,s) <0;
+	}
+};
 void VertexDataOPS::pack_from_mesh(VertexData &vd, const Mesh *m)
 {
 	const size_t vertex_size = vd.m_vtx_configuration.size();
 
-
-	VtxComperator cmprtr;
-	cmprtr.vs = vertex_size;
 	// we use two maps one is coarse maping vertices by their indices to
-	// ids the oder is fine to map converted vertex values to indices.
-	std::map<void*,uint32_t,VtxComperator> fine(cmprtr);
+	// ids the other is fine to map converted vertex values to indices.
+	std::map<FineVertex,uint32_t> fine;
 	std::map<MeshVertex,uint32_t,vertex_active_comperator> coarse;
 
 
@@ -551,14 +586,14 @@ void VertexDataOPS::pack_from_mesh(VertexData &vd, const Mesh *m)
 	// ok lets reserve some memory based on the upper limit
 	vd.vertices_reserve(static_cast<uint32_t>(coarse.size()));
 	// reset vertex count
-	vd.vertex_count() = 0;
+	vd.m_vertex_count = 0;
 	// the index count is fixed there will be 3 indices per triangle
 	vd.indices_reserve(static_cast<uint32_t>(m->triangles.size())*3);
 	// the only supported primitve is triangles so go with it!
 	vd.set_primitive(PRIM_TRIANGLES);
 
 	// allocate a proxy vertex for conversion to
-	void *vv = malloc(vertex_size);
+	FineVertex vv(vertex_size);
 	// the final data will be written to vertex data.
 	char *s = static_cast<char*>(vd.vertex_data());
 
@@ -572,7 +607,7 @@ void VertexDataOPS::pack_from_mesh(VertexData &vd, const Mesh *m)
 			if(coarse[v]== UINT32_MAX) // no
 			{
 				// create a working pointer and convert the vertex data into vv
-				void *vs = vv;
+				void* vs = vv.data;
 				for(int j = 0 ; j< AID_COUNT;j++)
 				{
 					if(!(vd.m_vtx_configuration.active_mask & (1<<j))) // not interested
@@ -589,14 +624,14 @@ void VertexDataOPS::pack_from_mesh(VertexData &vd, const Mesh *m)
 				{
 
 					// ok write it to s
-					memcpy(s,vv,vertex_size);
+					memcpy(s,vv.data,vertex_size);
 					s+=vertex_size;
 
 					// remember its id in both maps
 					coarse[v]=vd.vertex_count();
 					fine[vv]=vd.vertex_count();
 
-					vd.vertex_count()+=1;
+					vd.m_vertex_count +=1;
 				}
 				else // yes
 				{
@@ -608,10 +643,47 @@ void VertexDataOPS::pack_from_mesh(VertexData &vd, const Mesh *m)
 			vd.push_back(coarse[v]);
 		}
 	}
-
+	vd.vertices_resize(vd.vertex_count());
 }
+
 void VertexDataOPS::pack_to_mesh(const VertexData &vd, Mesh& m)
-{
-	// TODO
+{	
+	std::unordered_map<vec4, int> attributes[AID_COUNT];
+	const auto& vcfg = vd.vertex_configuration();
+	const char* data = (const char*) vd.vertex_data();
+	m.active_mask = vcfg.active_mask;
+
+	for(uint32_t t = 0; t <vd.index_count();t+=3)
+	{
+		Triangle tri;
+		for(int v= 0 ; v<3;v++)
+		{
+			tri[v].active_mask = m.active_mask;
+			const char* v_data =data + vd.get_index(t+v)*vcfg.size();
+			for(int a = 0 ; a< AID_COUNT;a++)
+			{
+				if(!(vcfg.active_mask&(1<<a)))
+					continue;
+				const auto& att = vcfg.attributes[a];
+				const float& w = (a==AID_POSITION||a==AID_COLOR)?1.0f:0.0f;
+				vec4 av(0.0f,0.0f,0.0f,w);
+				v_data = (const char*)att.convert(v_data,av);
+				int aid = 0;
+				auto it = attributes[a].find(av);
+				if(it == attributes->end())
+				{
+					aid = m.attribute_data[a].size();
+					attributes[a][av]= aid;
+					m.attribute_data[a].push_back(av);
+				}
+				else
+				{
+					aid = it->second;
+				}
+				tri[v].att_id[a]=aid;
+			}
+		}
+		m.triangles.push_back(tri);
+	}
 }
 }

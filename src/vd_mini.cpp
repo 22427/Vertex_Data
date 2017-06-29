@@ -1,4 +1,4 @@
-#include <vd_mini.h>
+#include "../include/vd_mini.h"
 #include <glm/common.hpp>
 
 namespace vd {
