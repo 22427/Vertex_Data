@@ -85,8 +85,8 @@ bool MeshOPS::read(Mesh& m, const std::string& path)
 		return MeshOPS::read_OBJ(m,f);
 	else if(ext == "OFF")
 		return MeshOPS::read_OFF(m,f);
-	else if(ext == "EOBJ")
-		return MeshOPS::read_EOBJ(m,f);
+	else if(ext == "OBJP" || ext == "OBJ+")
+		return MeshOPS::read_OBJP(m,f);
 	return false;
 }
 
@@ -96,7 +96,7 @@ bool MeshOPS::read(Mesh& m, const std::string& path)
 
 bool MeshOPS::read_OBJ(Mesh &m, std::ifstream &f)
 {
-	return read_EOBJ(m,f);
+	return MeshOPS::read_OBJP(m,f);
 }
 
 //   OFF-Loader
@@ -157,8 +157,11 @@ bool MeshOPS::read_OFF(Mesh &m, std::ifstream &f)
 	return true;
 }
 
+//   OBJP-Loader
+//------------------------------------------------------------------------------
 
-bool MeshOPS::read_EOBJ(Mesh &m, std::ifstream &f)
+
+bool MeshOPS::read_OBJP(Mesh &m, std::ifstream &f)
 {
 
 	std::string line;
@@ -167,6 +170,9 @@ bool MeshOPS::read_EOBJ(Mesh &m, std::ifstream &f)
 	int max_attr = 0;
 	while (std::getline(f,line))
 	{
+		auto first_hash = line.find_first_of('#');
+		if(line[first_hash+1]=='+')
+			line[first_hash]='+';
 		line = line.substr(0,line.find_first_of('#')-1);
 		trim(line);
 		if(line.empty()) continue;
@@ -177,16 +183,16 @@ bool MeshOPS::read_EOBJ(Mesh &m, std::ifstream &f)
 
 		int attr_id = -1;
 		if(lt == "v")		attr_id = 0;
-		else if(lt == "vn")	attr_id = 1;
-		else if(lt == "vt")	attr_id = 2;
-		else if(lt == "vc")	attr_id = 3;
-		else if(lt == "vtn")attr_id = 4;
-		else if(lt == "vbn")attr_id = 5;
+		else if(lt == "vt")	attr_id = 1;
+		else if(lt == "vn")	attr_id = 2;
+		else if(lt == "++vc")attr_id = 3;
+		else if(lt == "++vtn")attr_id = 4;
+		else if(lt == "++vbn")attr_id = 5;
 		if(attr_id >=0)
 		{
 			if(attr_id != AID_POSITION || AID_COLOR)
 				v.w =1.0;
-			m.active_mask |= attr_id;
+			m.active_mask |= (1<<attr_id);
 			line_str>>v.x>>v.y;
 			if(attr_id != AID_TEXCOORD)
 				line_str>>v.z;
@@ -200,7 +206,22 @@ bool MeshOPS::read_EOBJ(Mesh &m, std::ifstream &f)
 			Triangle t;
 			for( uint32_t v = 0; v < 3; v++)
 			{
-				for(int a =0 ; a<=max_attr;a++)
+				for(int a =0 ; a<=std::min(max_attr,3);a++)
+				{
+					if(m.active_mask & (1<<a))
+					{
+						line_str>>t[v].att_id[a];
+						t[v].att_id[a]-=1;
+					}
+					char c = '@';
+					if(a!= max_attr && a!= 2)
+						while(c != '/') line_str>>c;
+				}
+
+				if(max_attr>3)
+					read_word(line_str);
+
+				for(int a =3 ; a<=max_attr;a++)
 				{
 					if(m.active_mask & (1<<a))
 					{
@@ -211,6 +232,8 @@ bool MeshOPS::read_EOBJ(Mesh &m, std::ifstream &f)
 					if(a!= max_attr)
 						while(c != '/') line_str>>c;
 				}
+
+
 				t[v].active_mask = m.active_mask ;
 			}
 
@@ -220,6 +243,7 @@ bool MeshOPS::read_EOBJ(Mesh &m, std::ifstream &f)
 	return true;
 
 }
+
 
 ///*****************************************************************************
 ///   OUTPUT                                                                   *
@@ -242,9 +266,9 @@ bool MeshOPS::write(const Mesh&m, const std::string& path)
 	{
 		return MeshOPS::write_OBJ(m,f);
 	}
-	if(ext == "EOBJ")
+	if(ext == "OBJ+" || ext == "OBJP")
 	{
-		return MeshOPS::write_EOBJ(m,f);
+		return MeshOPS::write_OBJP(m,f);
 	}
 	return false;
 }
@@ -253,12 +277,12 @@ bool MeshOPS::write(const Mesh&m, const std::string& path)
 
 //   OBJ-Writer
 //------------------------------------------------------------------------------
-void write_eOBJ(const Mesh&m, uint32_t active_mask, std::ofstream& f);
+void write_OBJp(const Mesh&m, uint32_t active_mask, std::ofstream& f);
 
 
 bool MeshOPS::write_OBJ(const Mesh &m, std::ofstream &f)
 {
-	write_eOBJ(m,m.active_mask & 7,f);
+	write_OBJp(m,m.active_mask & 7,f);
 	return true;
 }
 
@@ -284,43 +308,49 @@ bool MeshOPS::write_OFF(const Mesh &m, std::ofstream &f)
 }
 
 
-//   eOBJ-Writer
+
+
+//   OBJ+-Writer
 //------------------------------------------------------------------------------
-bool MeshOPS::write_EOBJ(const Mesh &m, std::ofstream &f)
+bool MeshOPS::write_OBJP(const Mesh &m, std::ofstream &f)
 {
-	f<<"# eOBJ extends OBJ, there are now six attributes\n";
+	f<<"# OBJ+ extends OBJ, there are now six attributes\n";
+	f<<"# in order make it OBJ compatible '#+' does not indicate a comment anymore\n";
 	f<<"# v  - vertex position\n";
 	f<<"# vn - vertex normal\n";
 	f<<"# vt - vertex textrue coord\n";
-	f<<"# vc - vertex color\n";
-	f<<"# vtn - vertex tangent\n";
-	f<<"# vbn - vertex binormal\n";
-	f<<"# a face consists of up to 6 indices.\n";
+	f<<"# #+vc - vertex color\n";
+	f<<"# #+vtn - vertex tangent\n";
+	f<<"# #+vbn - vertex binormal\n";
+	f<<"# a face consists of up to 6 indices, the usual 3 obj indices,\n";
+	f<<"# followed by the new obj+ indices, introduced by #+ \n";
 	f<<"# Example:\n";
-	f<<"# f 1/2/3/4 2/3/3/5 3/4/3/5 #a face with normals tex_coords & colors\n";
-	f<<"# f 1///4 2///5 3///5       #a face with colors\n\n";
-	f<<"# Note an .obj is an .eobj, but _NOT_ vise versa!!\n\n";
+	f<<"# f 1/2/3 2/3/3 3/4/3 #+ 1 2 3 # with normals,texcoords & colors\n";
+	f<<"# f 1 2 3 #+ 3 7 2             # with colors\n";
+	f<<"# f 1 2 3 #+ 3/2 7/4 2/12      # with colors & tangents\n\n";
+	f<<"# Note any .obj is an .obj+, and the other way arround if\n";
+	f<<"# and _ONLY_ if there are no commends '#+ ...' in the .obj-file\n";
 
-	write_eOBJ(m,m.active_mask,f);
+	write_OBJp(m,m.active_mask,f);
 
 	return true;
 }
 
-void write_eOBJ(const Mesh&m, uint32_t active_mask, std::ofstream& f)
+void write_OBJp(const Mesh&m, uint32_t active_mask, std::ofstream& f)
 {
 	std::string a_names[AID_COUNT] = {
 		std::string("v"),
-		std::string("vn"),
 		std::string("vt"),
-		std::string("vc"),
-		std::string("vtn"),
-		std::string("vbn")};
+		std::string("vn"),
+		std::string("#+vc"),
+		std::string("#+vtn"),
+		std::string("#+vbn")};
 
 	int max_active =0 ;
 	for(int a =0 ; a< AID_COUNT;a++)
 		if(active_mask & (1<<a))
 		{
-			for( const auto& v : m.get_pos_data())
+			for( const auto& v : m.attribute_data[a])
 			{
 				f<<a_names[a]<<" "<<v.x<<" "<<v.y;
 				if(a != AID_TEXCOORD)
@@ -337,19 +367,36 @@ void write_eOBJ(const Mesh&m, uint32_t active_mask, std::ofstream& f)
 		for(int v = 0 ; v< 3; v++)
 		{
 			f<<" ";
-			for(int a =0 ; a< AID_COUNT;a++)
+			for(int a =0 ; a<= max_active && a < 3;a++)
 			{
 				if(active_mask & (1<<a))
 				{
 					f<<t[v].att_id[a]+1;
 				}
-				if(a<max_active)
+				if(a<max_active && a != 2)
 					f<<"/";
 			}
 		}
+		if(max_active > 2)
+		f<<" #+ ";
+		for(int v = 0 ; v< 3; v++)
+		{
+			f<<" ";
+			for(int a =3 ; a<= max_active;a++)
+			{
+				if(active_mask & (1<<a))
+				{
+					f<<t[v].att_id[a]+1;
+				}
+				if(a<max_active )
+					f<<"/";
+			}
+		}
+
 		f<<"\n";
 	}
 }
+
 
 ///*****************************************************************************
 ///*   PROCESSING                                                              *

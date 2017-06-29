@@ -140,14 +140,14 @@ class DLL_PUBLIC MeshOPS
 public:
 	static bool read(Mesh& m, const std::string& path);
 	static bool read_OBJ(Mesh& m, std::ifstream& f);
+	static bool read_OBJP(Mesh& m, std::ifstream& f);
 	static bool read_OFF(Mesh& m, std::ifstream& f);
-	static bool read_EOBJ(Mesh& m, std::ifstream& f);
+
 	
 	static bool write(const Mesh& m, const std::string& path);
 	static bool write_OBJ(const Mesh& m,  std::ofstream& f);
+	static bool write_OBJP(const Mesh& m,  std::ofstream& f);
 	static bool write_OFF(const Mesh& m, std::ofstream& f);
-	static bool write_EOBJ(const Mesh& m,  std::ofstream& f);
-
 
 	
 	static void recalculate_normals(Mesh& m);
