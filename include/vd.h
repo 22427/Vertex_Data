@@ -20,6 +20,16 @@ typedef uint8_t ubyte;
 typedef int8_t byte;
 }
 namespace std {
+/**
+ * vecN hashes according to
+ * Optimized Spatial Hashing for Collision Detection of Deformable Objects.
+ * ------------------------------------------------------------------------
+ * M. Teschner, B. Heidelberger, M. Müller, D. Pomerantes, und M. Gross. VMV,
+ * Pages 47-54. Aka GmbH, (2003)
+ *
+ * this is a good way to go for hashing spacial vectors.
+ *
+ */
 template <> struct hash<glm::vec2>
 {
 	size_t operator()(const glm::vec2 & x) const
@@ -32,7 +42,8 @@ template <> struct hash<glm::vec2>
 			r |= d[1];
 			return r;
 		}
-		return ((d[0]*73856093)^(19349663*d[1]))%(numeric_limits<size_t>::max());
+		return ((73856093ULL*d[0])^(19349663ULL*d[1]))
+				%(numeric_limits<size_t>::max());
 	}
 };
 
@@ -49,7 +60,10 @@ template <> struct hash<glm::vec3>
 			r ^= d[2];
 			return r;
 		}
-		return ((d[0]*73856093)^(19349663*d[1])^(83492791*d[2]))%(numeric_limits<size_t>::max());
+		return (73856093ULL*(d[0])^
+				(19349663ULL*d[1])^
+				(83492791ULL*d[2]))
+				%(numeric_limits<size_t>::max());
 	}
 };
 
@@ -66,14 +80,20 @@ template <> struct hash<glm::vec4>
 			r |= d[2]^d[3];
 			return r;
 		}
-		return ((d[0]*73856093)^(19349663*d[1])^(83492791*d[2])^(15495323*d[3]))%(numeric_limits<size_t>::max());
+		return ((73856093ULL*d[0])^
+				(19349663ULL*d[1])^
+				(83492791ULL*d[2])^
+				(15495323ULL*d[3]))
+				%(numeric_limits<size_t>::max());
 	}
 };
 
 }
 
 namespace vd {
-/********* TYPE class dealing with different data types************************/
+///*****************************************************************************
+/// TYPE                                                                       *
+/// ****************************************************************************
 
 enum TypeID
 {
@@ -91,7 +111,9 @@ enum TypeID
 	DOUBLE =0x140A,				// == GL_DOUBLE
 };
 
-
+/**
+ * @brief The Type class dealing with different data types
+ */
 class DLL_PUBLIC Type
 {
 public:
@@ -170,21 +192,18 @@ public:
 
 
 
-enum Primitive
-{
-	PRIM_POINTS = 0x0000,			// == GL_POINTS
-	PRIM_LINES = 0x0001,			// == GL_LINES
-	PRIM_LINE_LOOP = 0x0002,		// == GL_LINE_LOOP
-	PRIM_LINE_STRIP = 0x0003,		// == GL_LINE_STRIP
-	PRIM_TRIANGLES = 0x0004,		// == GL_TRIANGLES
-	PRIM_TRIANGLE_STRIP = 0x0005,	// == GL_TRIANGLE_STRIP
-	PRIM_TRIANGLE_FAN = 0x0006,		// == GL_TRIANGLE_FAN
-};
+
+
+///*****************************************************************************
+/// ATTRIBUTE                                                                  *
+/// ****************************************************************************
 
 enum Encoding
 {
 	EN_NONE,
-	EN_NORM_SCALE, // if this encoding is set, the data is encoded as normalized int, but it needs to be scaled by the constant, which is then encoded as floats!
+	EN_NORM_SCALE, // if this encoding is set, the data is encoded as normalized
+				   // int, but it needs to be scaled by the constant, which is
+				   // then encoded as floats!
 };
 
 /**
@@ -264,6 +283,10 @@ public:
 
 };
 
+///*****************************************************************************
+///* VERTEX CONFIGURATION                                                      *
+///*****************************************************************************
+
 /**
  * @brief The VertexConfiguration class Is a set of attributes resembling a
  * vertex.
@@ -320,7 +343,20 @@ public:
 
 };
 
+///*****************************************************************************
+///* VERTEX DATA                                                               *
+///*****************************************************************************
 
+enum Primitive
+{
+	PRIM_POINTS = 0x0000,			// == GL_POINTS
+	PRIM_LINES = 0x0001,			// == GL_LINES
+	PRIM_LINE_LOOP = 0x0002,		// == GL_LINE_LOOP
+	PRIM_LINE_STRIP = 0x0003,		// == GL_LINE_STRIP
+	PRIM_TRIANGLES = 0x0004,		// == GL_TRIANGLES
+	PRIM_TRIANGLE_STRIP = 0x0005,	// == GL_TRIANGLE_STRIP
+	PRIM_TRIANGLE_FAN = 0x0006,		// == GL_TRIANGLE_FAN
+};
 
 /**
  * @brief The VertexData class represents vertex data in a renderable form.
@@ -328,7 +364,7 @@ public:
 class DLL_PUBLIC VertexData
 {
 private:
-	VertexConfiguration m_vtx_configuration;
+	VertexConfiguration m_vtx_cfg;
 	Primitive m_render_primitive;
 	Type m_index_type;
 	uint m_index_count;
@@ -370,7 +406,7 @@ public:
 	 * @brief vertex_configuration gives access to the vertex configuration
 	 * @return
 	 */
-	const VertexConfiguration& vertex_configuration() const {return m_vtx_configuration;}
+	const VertexConfiguration& vertex_configuration() const {return m_vtx_cfg;}
 	/**
 	 * @brief vertex_count
 	 * @return number of vertices stored.
@@ -390,14 +426,12 @@ public:
 	 */
 	void vertices_resize(const uint c);
 
-
-
 	/**
 	 * @brief verties_null will set the whole reserved vertex space to 0!
 	 */
 	void verties_null()
 	{
-		memset(m_vertex_data,0,m_vertex_reserve*m_vtx_configuration.size());
+		memset(m_vertex_data,0,m_vertex_reserve*m_vtx_cfg.size());
 	}
 
 	/**
@@ -509,19 +543,57 @@ public:
 
 };
 
+///*****************************************************************************
+///* VERTEX DATA OPERATIONS                                                    *
+///*****************************************************************************
 
 class DLL_PUBLIC VertexDataOPS
 {
-protected:
 public:
-
+	/**
+	 * @brief read reads VertexData from a given stream.
+	 * @param vd VertexData to read to.
+	 * @param f incomming stream to read from
+	 * @return false if there was any error.
+	 */
 	static bool read(VertexData &vd, std::ifstream& f);
+	/**
+	 * @brief read reads VertexData from a file at the given path.
+	 * @param vd VertexData to read to.
+	 * @param path to the .vd file
+	 * @return false if there was any error (including opening the file)
+	 */
 	static bool read(VertexData &vd, const std::string& path);
+
+	/**
+	 * @brief write writes the given VertexData to a stream
+	 * @param vd VertexData to write from.
+	 * @param f stream to write to.
+	 * @return false if there was any error.
+	 */
 	static bool write(const VertexData &vd, std::ofstream& f);
+
+	/**
+	 * @brief write writes the given VertexData to a file at the given path.
+	 * @param vd VertexDate to write from.
+	 * @param path path to the .vd file to write to.
+	 * @return false if ther was any error (including opening the file)
+	 */
 	static bool write(const VertexData &vd, const std::string& path);
 
-	static void pack_from_mesh(VertexData &vd, const Mesh *m);
-	static void pack_to_mesh(const VertexData &vd, Mesh& m);
+	/**
+	 * @brief from_mesh converts a mesh to VertexData
+	 * @param vd
+	 * @param m
+	 */
+	static void from_mesh(VertexData &vd, const Mesh m);
+
+	/**
+	 * @brief to_mesh converts VertexData back to a mesh.
+	 * @param vd
+	 * @param m
+	 */
+	static void to_mesh(const VertexData &vd, Mesh& m);
 };
 
 

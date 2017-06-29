@@ -343,7 +343,7 @@ VertexData::VertexData(Primitive primitive,
 					   const uint res_vtx,
 					   const uint res_idx )
 	:
-	  m_vtx_configuration(cfg),
+	  m_vtx_cfg(cfg),
 	  m_render_primitive(primitive),
 	  m_index_type(index_type),
 	  m_index_count(0u),
@@ -369,7 +369,7 @@ void VertexData::vertices_reserve(const uint c)
 		m_vertex_reserve = c;
 		m_vertex_data =static_cast<ubyte*>(realloc(m_vertex_data,
 												   m_vertex_reserve*
-												   m_vtx_configuration.size()));
+												   m_vtx_cfg.size()));
 	}
 }
 
@@ -378,7 +378,7 @@ void VertexData::vertices_resize(const uint c)
 	m_vertex_reserve = c;
 	m_vertex_data =static_cast<ubyte*>(realloc(m_vertex_data,
 											   m_vertex_reserve*
-											   m_vtx_configuration.size()));
+											   m_vtx_cfg.size()));
 	m_vertex_count = c;
 }
 
@@ -481,7 +481,7 @@ struct VtxComperator
 
 bool VertexDataOPS::read(VertexData &vd,std::ifstream &f)
 {
-	f.read((char*)&(vd.m_vtx_configuration),sizeof(VertexConfiguration));
+	f.read((char*)&(vd.m_vtx_cfg),sizeof(VertexConfiguration));
 	f.read((char*)&(vd.m_render_primitive),sizeof(Primitive));
 	f.read((char*)&(vd.m_index_type),sizeof(Type));
 	f.read((char*)&(vd.m_index_count),sizeof(uint32_t));
@@ -491,7 +491,7 @@ bool VertexDataOPS::read(VertexData &vd,std::ifstream &f)
 	f.read(	(char*)(vd.m_index_data),
 			vd.index_count()*vd.index_type().size());
 	f.read(	(char*)(vd.m_vertex_data),
-			vd.vertex_count()*vd.m_vtx_configuration.size());
+			vd.vertex_count()*vd.m_vtx_cfg.size());
 	return true;
 }
 
@@ -508,13 +508,13 @@ bool VertexDataOPS::read(VertexData &vd, const std::string &path)
 
 bool VertexDataOPS::write(const VertexData &vd, std::ofstream &f)
 {
-	f.write((char*)(&(vd.m_vtx_configuration)),sizeof(VertexConfiguration));
+	f.write((char*)(&(vd.m_vtx_cfg)),sizeof(VertexConfiguration));
 	f.write((char*)&(vd.m_render_primitive),sizeof(Primitive));
 	f.write((char*)&(vd.m_index_type),sizeof(Type));
 	f.write((char*)&(vd.m_index_count),sizeof(uint32_t));
 	f.write((char*)&(vd.m_vertex_count),sizeof(uint32_t));
 	f.write((char*)(vd.m_index_data),vd.index_count()*vd.index_type().size());
-	f.write((char*)(vd.m_vertex_data),vd.vertex_count()*vd.m_vtx_configuration.size());
+	f.write((char*)(vd.m_vertex_data),vd.vertex_count()*vd.m_vtx_cfg.size());
 	return  true;
 }
 
@@ -557,9 +557,9 @@ public:
 		return memcmp(data,o.data,s) <0;
 	}
 };
-void VertexDataOPS::pack_from_mesh(VertexData &vd, const Mesh *m)
+void VertexDataOPS::from_mesh(VertexData &vd, const Mesh m)
 {
-	const size_t vertex_size = vd.m_vtx_configuration.size();
+	const size_t vertex_size = vd.m_vtx_cfg.size();
 
 	// we use two maps one is coarse maping vertices by their indices to
 	// ids the other is fine to map converted vertex values to indices.
@@ -568,7 +568,7 @@ void VertexDataOPS::pack_from_mesh(VertexData &vd, const Mesh *m)
 
 
 	// set all coareses to a unvalid index
-	for(const auto& t: m->triangles)
+	for(const auto& t: m.triangles)
 	{
 		for(const auto& v : t)
 		{
@@ -588,7 +588,7 @@ void VertexDataOPS::pack_from_mesh(VertexData &vd, const Mesh *m)
 	// reset vertex count
 	vd.m_vertex_count = 0;
 	// the index count is fixed there will be 3 indices per triangle
-	vd.indices_reserve(static_cast<uint32_t>(m->triangles.size())*3);
+	vd.indices_reserve(static_cast<uint32_t>(m.triangles.size())*3);
 	// the only supported primitve is triangles so go with it!
 	vd.set_primitive(PRIM_TRIANGLES);
 
@@ -597,8 +597,9 @@ void VertexDataOPS::pack_from_mesh(VertexData &vd, const Mesh *m)
 	// the final data will be written to vertex data.
 	char *s = static_cast<char*>(vd.vertex_data());
 
+	const VertexConfiguration& vcfg = vd.m_vtx_cfg;
 	// lets go for all triangles ...
-	for(const auto& t: m->triangles)
+	for(const auto& t: m.triangles)
 	{
 		// ... and all vertices inside the triangles
 		for(const auto& v : t)
@@ -610,14 +611,17 @@ void VertexDataOPS::pack_from_mesh(VertexData &vd, const Mesh *m)
 				void* vs = vv.data;
 				for(int j = 0 ; j< AID_COUNT;j++)
 				{
-					if(!(vd.m_vtx_configuration.active_mask & (1<<j))) // not interested
+					if(!(vcfg.active_mask & (1<<j))) // not interested
 						continue;
-					if(!(m->active_mask & (1<<j))) // not given by the mesh
+					if(!(m.active_mask & (1<<j))) // not given by the mesh
 					{
-						vs=vd.m_vtx_configuration.attributes[j].convert(vs,glm::vec4(0,0,0,0));
+						vs=vcfg.attributes[j].convert(vs,glm::vec4(0,0,0,0));
 					}
-					else if(vd.m_vtx_configuration.active_mask & (1<<j)) // available
-						vs=vd.m_vtx_configuration.attributes[j].convert(vs,m->attribute_data[j][v.att_id[j]]);
+					else if(vcfg.active_mask & (1<<j)) // available
+					{
+						auto& matt = m.attribute_data[j][v.att_id[j]];
+						vs=vcfg.attributes[j].convert(vs,matt);
+					}
 				}
 				// do we know this converted vertex?
 				if(fine.find(vv) == fine.end()) // no
@@ -646,7 +650,7 @@ void VertexDataOPS::pack_from_mesh(VertexData &vd, const Mesh *m)
 	vd.vertices_resize(vd.vertex_count());
 }
 
-void VertexDataOPS::pack_to_mesh(const VertexData &vd, Mesh& m)
+void VertexDataOPS::to_mesh(const VertexData &vd, Mesh& m)
 {	
 	std::unordered_map<vec4, int> attributes[AID_COUNT];
 	const auto& vcfg = vd.vertex_configuration();

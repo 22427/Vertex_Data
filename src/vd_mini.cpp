@@ -1,18 +1,20 @@
 #include "../include/vd_mini.h"
 #include <glm/common.hpp>
-
+using namespace glm;
 namespace vd {
 
 template<typename T>
-inline typename std::enable_if<std::is_floating_point<T>::value || std::is_class<T>::value, T>::type
+inline typename
+std::enable_if<
+std::is_floating_point<T>::value||std::is_class<T>::value,T>::type
 float_to_nint(float /*f*/)
 {
 	static_assert(true, "Conversion only to integer types!");
 }
 
 /**
- * @brief float_to_nint converts a float in [0,1] to an unsigned integer in [0,max].
- * This is done with respect to the OpenGL spec.
+ * @brief float_to_nint converts a float in [0,1] to an unsigned integer
+ * in [0,max]. This is done with respect to the OpenGL spec.
  * @param f float to confert
  * @return the integer representing f
  */
@@ -52,7 +54,8 @@ inline void float_to_nint(const float f, T& t)
 
 
 /**
- * @brief nint_to_float converts a nint in [min,max] to the corresponding float in [-1,1]
+ * @brief nint_to_float converts a nint in [min,max] to the corresponding float
+ * in [-1,1]
  * @param x nint to convert
  * @return converted float
  */
@@ -66,7 +69,8 @@ nint_to_float(const T x)
 
 
 /**
- * @brief nint_to_float converts a unsigned nint in [0,max] to the corresponding float in [0,1]
+ * @brief nint_to_float converts a unsigned nint in [0,max] to the corresponding
+ * float in [0,1]
  * @param x unsigned nint to convert
  * @return converted float
  */
@@ -78,7 +82,7 @@ nint_to_float(const T x)
 	return static_cast<float>(x)/t;
 }
 
-void MiniVertex::set(const glm::vec3 &p, const glm::vec3 &n, const glm::vec3 &t)
+void MiniVertex::set(const vec3 &p, const vec3 &n, const vec3 &t)
 {
 	for(int  i = 0 ; i< 3;i++)
 	{
@@ -93,7 +97,7 @@ void MiniVertex::set(const glm::vec3 &p, const glm::vec3 &n, const glm::vec3 &t)
 
 MiniVD::MiniVD()
 {
-	pos_scale= glm::vec3(1.0f);
+	pos_scale= vec3(1.0f);
 	index_size = data_size = 0;
 	index = nullptr;
 	data = nullptr;
@@ -103,21 +107,21 @@ MiniVD::MiniVD()
 void MiniVD::read_mesh(const Mesh &m)
 {
 	// get scale and offset
-	glm::vec3 bb_min(+1000000);
-	glm::vec3 bb_max(-1000000);
+	vec3 bb_min(std::numeric_limits<float>::max());
+	vec3 bb_max(std::numeric_limits<float>::lowest());
 	for(const auto& v : m.get_pos_data())
 	{
-		pos_offset = pos_offset+glm::vec3(v);
-		bb_min = glm::min(bb_min,glm::vec3(v));
-		bb_max = glm::max(bb_min,glm::vec3(v));
+		pos_offset = pos_offset+vec3(v);
+		bb_min = min(bb_min,vec3(v));
+		bb_max = max(bb_min,vec3(v));
 	}
 	pos_offset = pos_offset/static_cast<float>(m.get_pos_data().size());
 
 	bb_min -= pos_offset;
 	bb_max -= pos_offset;
-	bb_min = glm::abs(bb_min);
-	bb_max = glm::abs(bb_max);
-	pos_scale = glm::max(bb_max,bb_min);
+	bb_min = abs(bb_min);
+	bb_max = abs(bb_max);
+	pos_scale = max(bb_max,bb_min);
 
 	std::map<MeshVertex,uint16_t> vid;
 	for(const auto& t : m.triangles)
@@ -144,9 +148,10 @@ void MiniVD::read_mesh(const Mesh &m)
 			if(id == UINT16_MAX)
 			{
 				vid[v] = curr_vertex;
-				data[curr_index].set((glm::vec3(m.get_pos_data()[v.pos_id])-pos_offset)/pos_scale,
-						glm::vec3(m.get_nrm_data()[v.nrm_id]),
-						glm::vec3(m.get_tex_data()[v.tex_id]));
+				data[curr_index].set(
+						(vec3(m.get_pos_data()[v.pos_id])-pos_offset)/pos_scale,
+						vec3(m.get_nrm_data()[v.nrm_id]),
+						vec3(m.get_tex_data()[v.tex_id]));
 				index[curr_index] = curr_vertex;
 				curr_vertex ++;
 			}
@@ -163,12 +168,12 @@ bool MiniVertexDataOPS::write(const MiniVD &vd, std::ofstream &f)
 {
 	if(!f.is_open())
 		return false;
-#define write_fixed(f,x) (f).write(reinterpret_cast<const char*>(&( x )),sizeof( x ) )
-	write_fixed(f,vd.data_size);
-	write_fixed(f,vd.index_size);
-	write_fixed(f,vd.pos_offset);
-	write_fixed(f,vd.pos_scale);
-#undef write_fixed
+#define wrt_fixed(f,x) (f).write(reinterpret_cast<const char*>(&(x)),sizeof(x))
+	wrt_fixed(f,vd.data_size);
+	wrt_fixed(f,vd.index_size);
+	wrt_fixed(f,vd.pos_offset);
+	wrt_fixed(f,vd.pos_scale);
+#undef wrt_fixed
 	f.write(reinterpret_cast<const char*>(&(vd.data)),vd.data_size);
 	f.write(reinterpret_cast<const char*>(&(vd.index)),vd.index_size);
 	return  true;

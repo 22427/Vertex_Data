@@ -13,12 +13,18 @@
 namespace vd {
 
 
+typedef glm::vec2 vec2;
+typedef glm::vec3 vec3;
+typedef glm::vec4 vec4;
+typedef uint8_t ubyte;
+typedef int8_t byte;
+
 enum AttributeID
 {
 
 	AID_POSITION =0,
-	AID_NORMAL=1,
-	AID_TEXCOORD=2,
+	AID_TEXCOORD=1,
+	AID_NORMAL=2,
 	AID_COLOR=3,
 	AID_TANGENT=4,
 	AID_BINORMAL=5,
@@ -29,8 +35,8 @@ enum AttributeID
 enum AttributeMask
 {
 	AM_POSITION =1<<AID_POSITION,
-	AM_NORMAL=1<<AID_NORMAL,
 	AM_TEXCOORD=1<<AID_TEXCOORD,
+	AM_NORMAL=1<<AID_NORMAL,
 	AM_COLOR=1<<AID_COLOR,
 	AM_TANGENT=1<<AID_TANGENT,
 	AM_BINORMAL=1<<AID_BINORMAL,
@@ -101,22 +107,28 @@ class DLL_PUBLIC Mesh
 {
 public:
 	uint32_t active_mask;
-	std::vector<glm::vec4> attribute_data[AID_COUNT];
+	std::vector<vec4> attribute_data[AID_COUNT];
 	std::vector<Triangle> triangles;
 
-	std::vector<glm::vec4>& get_pos_data(){return attribute_data[AID_POSITION];}
-	std::vector<glm::vec4>& get_nrm_data(){return attribute_data[AID_NORMAL];}
-	std::vector<glm::vec4>& get_tex_data(){return attribute_data[AID_TEXCOORD];}
-	std::vector<glm::vec4>& get_clr_data(){return attribute_data[AID_COLOR];}
-	std::vector<glm::vec4>& get_tan_data(){return attribute_data[AID_TANGENT];}
-	std::vector<glm::vec4>& get_btn_data(){return attribute_data[AID_BINORMAL];}
+	std::vector<vec4>& get_pos_data(){return attribute_data[AID_POSITION];}
+	std::vector<vec4>& get_nrm_data(){return attribute_data[AID_NORMAL];}
+	std::vector<vec4>& get_tex_data(){return attribute_data[AID_TEXCOORD];}
+	std::vector<vec4>& get_clr_data(){return attribute_data[AID_COLOR];}
+	std::vector<vec4>& get_tan_data(){return attribute_data[AID_TANGENT];}
+	std::vector<vec4>& get_btn_data(){return attribute_data[AID_BINORMAL];}
 
-	const std::vector<glm::vec4>& get_pos_data()const {return attribute_data[AID_POSITION];}
-	const std::vector<glm::vec4>& get_nrm_data()const {return attribute_data[AID_NORMAL];}
-	const std::vector<glm::vec4>& get_tex_data()const {return attribute_data[AID_TEXCOORD];}
-	const std::vector<glm::vec4>& get_clr_data()const {return attribute_data[AID_COLOR];}
-	const std::vector<glm::vec4>& get_tan_data()const {return attribute_data[AID_TANGENT];}
-	const std::vector<glm::vec4>& get_btn_data()const {return attribute_data[AID_BINORMAL];}
+	const std::vector<vec4>& get_pos_data()const {
+		return attribute_data[AID_POSITION];}
+	const std::vector<vec4>& get_nrm_data()const {
+		return attribute_data[AID_NORMAL];}
+	const std::vector<vec4>& get_tex_data()const {
+		return attribute_data[AID_TEXCOORD];}
+	const std::vector<vec4>& get_clr_data()const {
+		return attribute_data[AID_COLOR];}
+	const std::vector<vec4>& get_tan_data()const {
+		return attribute_data[AID_TANGENT];}
+	const std::vector<vec4>& get_btn_data()const {
+		return attribute_data[AID_BINORMAL];}
 };
 
 
@@ -126,12 +138,17 @@ public:
 class DLL_PUBLIC MeshOPS
 {
 public:
-	static bool load(Mesh& m, const std::string& path);
-	static bool load_OBJ(Mesh& m, const std::string& path);
-	static bool load_OFF(Mesh& m, const std::string& path);
+	static bool read(Mesh& m, const std::string& path);
+	static bool read_OBJ(Mesh& m, std::ifstream& f);
+	static bool read_OFF(Mesh& m, std::ifstream& f);
+	static bool read_EOBJ(Mesh& m, std::ifstream& f);
 	
 	static bool write(const Mesh& m, const std::string& path);
-	static bool write_OFF(const Mesh& m, const std::string& path);
+	static bool write_OBJ(const Mesh& m,  std::ofstream& f);
+	static bool write_OFF(const Mesh& m, std::ofstream& f);
+	static bool write_EOBJ(const Mesh& m,  std::ofstream& f);
+
+
 	
 	static void recalculate_normals(Mesh& m);
 	static void recalculate_tan_btn(Mesh& m);

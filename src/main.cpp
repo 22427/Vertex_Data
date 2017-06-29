@@ -34,7 +34,7 @@ int main(int argc, char ** argv)
 
 	if(ext_in != "VD")
 	{
-		if(!MeshOPS::load(m, argv[1]))
+		if(!MeshOPS::read(m, argv[1]))
 		{
 			print_help();
 			return 2;
@@ -45,7 +45,7 @@ int main(int argc, char ** argv)
 		VertexData vd;
 		if(!VertexDataOPS::read(vd,pin))
 			return 2;
-		VertexDataOPS::pack_to_mesh(vd,m);
+		VertexDataOPS::to_mesh(vd,m);
 	}
 	// output
 	if(ext_out != "VD")
@@ -72,7 +72,7 @@ int main(int argc, char ** argv)
 		printf("\tNORMAL    |   3   | FLOAT  | false\n");
 		printf("\tTEXCOORD  |   2   | FLOAT  | false\n");
 		printf("\tCOLOR     |   4   | U_BYTE | true\n");
-		VertexDataOPS::pack_from_mesh(vd,&m);
+		VertexDataOPS::from_mesh(vd,m);
 		if(!VertexDataOPS::write(vd,pout))
 			return 3;
 	}
