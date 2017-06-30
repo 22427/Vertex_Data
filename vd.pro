@@ -35,6 +35,7 @@ HEADERS += \
 	include/vd.h \
 	include/vd_mesh.h \
 	include/vd_mini.h \
-	include/vd_dll.h
+	include/vd_dll.h \
+    include/vd_errcode.h
 
 MAKEFILE = Makefile_QT

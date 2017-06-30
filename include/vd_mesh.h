@@ -9,7 +9,7 @@
 #include <fstream>
 
 #include "vd_dll.h"
-
+#include "vd_errcode.h"
 namespace vd {
 
 
@@ -27,7 +27,7 @@ enum AttributeID
 	AID_NORMAL=2,
 	AID_COLOR=3,
 	AID_TANGENT=4,
-	AID_BINORMAL=5,
+	AID_BITANGENT=5,
 	AID_COUNT
 };
 
@@ -39,7 +39,7 @@ enum AttributeMask
 	AM_NORMAL=1<<AID_NORMAL,
 	AM_COLOR=1<<AID_COLOR,
 	AM_TANGENT=1<<AID_TANGENT,
-	AM_BINORMAL=1<<AID_BINORMAL,
+	AM_BITANGENT=1<<AID_BITANGENT,
 	AM_ALL =  (1<<AID_COUNT)-1,
 };
 
@@ -115,7 +115,7 @@ public:
 	std::vector<vec4>& get_tex_data(){return attribute_data[AID_TEXCOORD];}
 	std::vector<vec4>& get_clr_data(){return attribute_data[AID_COLOR];}
 	std::vector<vec4>& get_tan_data(){return attribute_data[AID_TANGENT];}
-	std::vector<vec4>& get_btn_data(){return attribute_data[AID_BINORMAL];}
+	std::vector<vec4>& get_btn_data(){return attribute_data[AID_BITANGENT];}
 
 	const std::vector<vec4>& get_pos_data()const {
 		return attribute_data[AID_POSITION];}
@@ -128,7 +128,7 @@ public:
 	const std::vector<vec4>& get_tan_data()const {
 		return attribute_data[AID_TANGENT];}
 	const std::vector<vec4>& get_btn_data()const {
-		return attribute_data[AID_BINORMAL];}
+		return attribute_data[AID_BITANGENT];}
 };
 
 
@@ -137,23 +137,68 @@ public:
  */
 class DLL_PUBLIC MeshOPS
 {
+	static std::string m_errmsg;
+	static ErrorCode m_errcde;
 public:
+	/**
+	 * @brief read will load a mesh from a file. The file extension will
+	 * determine the loader used.
+	 *	OFF			 -> read_OFF
+	 *	OBJ,OBJP,OBJ+ -> read_OBJP
+	 * @param m	Mesh to load the data into.
+	 * @param path Where to find the file
+	 * @return
+	 */
 	static bool read(Mesh& m, const std::string& path);
-	static bool read_OBJ(Mesh& m, std::ifstream& f);
 	static bool read_OBJP(Mesh& m, std::ifstream& f);
 	static bool read_OFF(Mesh& m, std::ifstream& f);
 
-	
+	/**
+	 * @brief read will save a mesh to a file. The file extension will
+	 * determine the writer used.
+	 *	OFF			 -> write_OFF
+	 *	OBJ,OBJP,OBJ+ -> write_OBJP
+	 * @param m	Mesh to read the data from.
+	 * @param path Where to write the data to.
+	 * @return
+	 */
 	static bool write(const Mesh& m, const std::string& path);
-	static bool write_OBJ(const Mesh& m,  std::ofstream& f);
 	static bool write_OBJP(const Mesh& m,  std::ofstream& f);
 	static bool write_OFF(const Mesh& m, std::ofstream& f);
 
-	
+	/**
+	 * @brief recalculate_normals Will calculate smooth normals.
+	 * @param m
+	 */
 	static void recalculate_normals(Mesh& m);
-	static void recalculate_tan_btn(Mesh& m);
+	/**
+	 * @brief recalculate_normals Will calculate tangents and bitangents
+	 * for the mesh. This needs positions, normals and texture coordinates to
+	 * work.
+	 * @param m
+	 */
+	static bool recalculate_tan_btn(Mesh& m);
 
+	/**
+	 * @brief remove_double_attributes Will remove any doubled attributes.
+	 * @param m
+	 * @return
+	 */
 	static Mesh remove_double_attributes(const Mesh& m);
+
+	/**
+	 * @brief read_error_code accessing the last error code. Will be resetted
+	 * after this access.
+	 * @return
+	 */
+	static ErrorCode read_error_code()
+	{ErrorCode r = m_errcde;m_errcde=NO_ERROR;return r;}
+
+	/**
+	 * @brief error_msg acessing the last error message.
+	 * @return
+	 */
+	static const std::string& error_msg(){return m_errmsg;}
 };
 
 

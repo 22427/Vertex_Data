@@ -117,6 +117,29 @@ static inline void trim(std::string &s){ltrim(s);rtrim(s);}
 
 
 
+Type::Type(std::string str)
+{
+	for(auto& c: str) c = toupper(c);
+	if(str == "BYTE" || str == "CHAR" || str=="INT8")
+		id = BYTE;
+	else if(str=="UNSIGNED_BYTE"||str=="UCHAR"||str=="UBYTE"||str=="UINT8")
+		id = UNSIGNED_BYTE;
+	else if(str == "SHORT"|| str=="INT16")
+		id = SHORT;
+	else if(str== "UNSIGNED_SHORT" || str == "USHORT"|| str=="UINT16")
+		id = UNSIGNED_SHORT;
+	else if(str == "INT"|| str=="INT32")
+		id = INT;
+	else if(str== "UNSIGNED_INT" || str == "UINT"|| str=="UINT32")
+		id = UNSIGNED_INT;
+	else if(str == "FLOAT")
+		id = FLOAT;
+	else if(str == "DOUBLE")
+		id = DOUBLE;
+	else
+		id = INVALID;
+}
+
 std::string Type::to_string() const
 {
 	switch (id)
@@ -500,7 +523,11 @@ bool VertexDataOPS::read(VertexData &vd, const std::string &path)
 	std::ifstream f;
 	f.open(path,std::ifstream::binary);
 	if(!f.is_open())
+	{
+		m_errcde = CANNOT_OPEN_FILE;
+		m_errmsg = "Cannot open '"+path+"' to read.";
 		return  false;
+	}
 	return read(vd,f);
 }
 
@@ -523,7 +550,11 @@ bool VertexDataOPS::write(const VertexData &vd, const std::string &path)
 	std::ofstream f;
 	f.open(path,std::ofstream::binary);
 	if(!f.is_open())
+	{
+		m_errcde = CANNOT_OPEN_FILE;
+		m_errmsg = "Cannot open '"+path+"' to write.";
 		return  false;
+	}
 	return write(vd,f);
 }
 
@@ -690,4 +721,7 @@ void VertexDataOPS::to_mesh(const VertexData &vd, Mesh& m)
 		m.triangles.push_back(tri);
 	}
 }
+
+std::string VertexDataOPS::m_errmsg = "";
+ErrorCode VertexDataOPS::m_errcde=NO_ERROR;
 }

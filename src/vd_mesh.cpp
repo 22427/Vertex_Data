@@ -80,24 +80,18 @@ bool MeshOPS::read(Mesh& m, const std::string& path)
 
 	std::ifstream f(path);
 	if(!f.is_open())
+	{
+		m_errcde = CANNOT_OPEN_FILE;
+		m_errmsg = "Cannot open file '"+path+"'";
 		return false;
-	if(ext == "OBJ")
-		return MeshOPS::read_OBJ(m,f);
+	}
 	else if(ext == "OFF")
 		return MeshOPS::read_OFF(m,f);
-	else if(ext == "OBJP" || ext == "OBJ+")
+	else if(ext=="OBJ" || ext == "OBJP" || ext == "OBJ+")
 		return MeshOPS::read_OBJP(m,f);
 	return false;
 }
 
-
-//  OBJ-Loader
-//------------------------------------------------------------------------------
-
-bool MeshOPS::read_OBJ(Mesh &m, std::ifstream &f)
-{
-	return MeshOPS::read_OBJP(m,f);
-}
 
 //   OFF-Loader
 //------------------------------------------------------------------------------
@@ -113,7 +107,11 @@ bool MeshOPS::read_OFF(Mesh &m, std::ifstream &f)
 	std::getline(f,line);
 	trim(line);
 	if(line != "OFF")
+	{
+		m_errcde = PARSING_FILE;
+		m_errmsg = "OFF files should start with 'OFF'";
 		return false;
+	}
 	std::getline(f,line);
 
 	int n_vert = 0;
@@ -130,6 +128,8 @@ bool MeshOPS::read_OFF(Mesh &m, std::ifstream &f)
 		if(!std::getline(f,line))
 		{
 			m.get_pos_data().clear();
+			m_errcde = PARSING_FILE;
+			m_errmsg = "Not enough vertices to read.";
 			return false;
 		}
 
@@ -143,13 +143,19 @@ bool MeshOPS::read_OFF(Mesh &m, std::ifstream &f)
 		{
 			m.get_pos_data().clear();
 			m.triangles.clear();
+			m_errcde = PARSING_FILE;
+			m_errmsg = "Not enough faces to read.";
 			return false;
 		}
 		std::stringstream ls(line);
 		int q=0;
 		ls>>q;
 		if(q!=3)
+		{
+			m_errcde = NOT_SUPPORTED;
+			m_errmsg = "Only triangle meshes are supported for now!";
 			return false;
+		}
 		for(int j = 0; j<3;j++)
 			ls>>t[j].pos_id;
 		m.triangles.push_back(t);
@@ -187,7 +193,7 @@ bool MeshOPS::read_OBJP(Mesh &m, std::ifstream &f)
 		else if(lt == "vn")	attr_id = 2;
 		else if(lt == "++vc")attr_id = 3;
 		else if(lt == "++vtn")attr_id = 4;
-		else if(lt == "++vbn")attr_id = 5;
+		else if(lt == "++vbtn")attr_id = 5;
 		if(attr_id >=0)
 		{
 			if(attr_id != AID_POSITION || AID_COLOR)
@@ -257,16 +263,17 @@ bool MeshOPS::write(const Mesh&m, const std::string& path)
 
 	std::ofstream f(path);
 	if(!f.is_open())
+	{
+		m_errcde = CANNOT_OPEN_FILE;
+		m_errmsg = "Cannot open file to write '"+path+"'";
 		return false;
+	}
 	if(ext == "OFF")
 	{
 		return MeshOPS::write_OFF(m,f);
 	}
-	if(ext == "OBJ")
-	{
-		return MeshOPS::write_OBJ(m,f);
-	}
-	if(ext == "OBJ+" || ext == "OBJP")
+
+	if(ext == "OBJ+" || ext == "OBJP" || ext=="OBJ")
 	{
 		return MeshOPS::write_OBJP(m,f);
 	}
@@ -275,16 +282,9 @@ bool MeshOPS::write(const Mesh&m, const std::string& path)
 
 
 
-//   OBJ-Writer
-//------------------------------------------------------------------------------
-void write_OBJp(const Mesh&m, uint32_t active_mask, std::ofstream& f);
 
 
-bool MeshOPS::write_OBJ(const Mesh &m, std::ofstream &f)
-{
-	write_OBJp(m,m.active_mask & 7,f);
-	return true;
-}
+
 
 //   OFF-Writer
 //------------------------------------------------------------------------------
@@ -312,16 +312,18 @@ bool MeshOPS::write_OFF(const Mesh &m, std::ofstream &f)
 
 //   OBJ+-Writer
 //------------------------------------------------------------------------------
+void write_OBJp(const Mesh&m, uint32_t active_mask, std::ofstream& f);
 bool MeshOPS::write_OBJP(const Mesh &m, std::ofstream &f)
 {
 	f<<"# OBJ+ extends OBJ, there are now six attributes\n";
-	f<<"# in order make it OBJ compatible '#+' does not indicate a comment anymore\n";
+	f<<"# in order make it OBJ compatible '#+' does not indicate a comment "
+	   "anymore\n";
 	f<<"# v  - vertex position\n";
 	f<<"# vn - vertex normal\n";
 	f<<"# vt - vertex textrue coord\n";
 	f<<"# #+vc - vertex color\n";
 	f<<"# #+vtn - vertex tangent\n";
-	f<<"# #+vbn - vertex binormal\n";
+	f<<"# #+vbtn - vertex bitangent\n";
 	f<<"# a face consists of up to 6 indices, the usual 3 obj indices,\n";
 	f<<"# followed by the new obj+ indices, introduced by #+ \n";
 	f<<"# Example:\n";
@@ -332,7 +334,6 @@ bool MeshOPS::write_OBJP(const Mesh &m, std::ofstream &f)
 	f<<"# and _ONLY_ if there are no commends '#+ ...' in the .obj-file\n";
 
 	write_OBJp(m,m.active_mask,f);
-
 	return true;
 }
 
@@ -344,7 +345,7 @@ void write_OBJp(const Mesh&m, uint32_t active_mask, std::ofstream& f)
 		std::string("vn"),
 		std::string("#+vc"),
 		std::string("#+vtn"),
-		std::string("#+vbn")};
+		std::string("#+vbtn")};
 
 	int max_active =0 ;
 	for(int a =0 ; a< AID_COUNT;a++)
@@ -450,8 +451,16 @@ void MeshOPS::recalculate_normals(Mesh &m)
 //  Tangent and Bitangent calculation
 //------------------------------------------------------------------------------
 
-void MeshOPS::recalculate_tan_btn(Mesh &m)
+bool MeshOPS::recalculate_tan_btn(Mesh &m)
 {
+	uint32_t req = AM_TEXCOORD|AM_NORMAL|AM_POSITION;
+	if((m.active_mask&req) != req)
+	{
+		m_errcde = NEED_MORE_DATA;
+		m_errmsg = "Calculating tangents and bitangents needs texcoords,"
+				   "normals and positions.";
+		return false;
+	}
 	m.get_tan_data().clear();
 	m.get_btn_data().clear();
 
@@ -504,7 +513,8 @@ void MeshOPS::recalculate_tan_btn(Mesh &m)
 		}
 	}
 
-	m.active_mask |= AM_TANGENT | AM_BINORMAL;
+	m.active_mask |= AM_TANGENT | AM_BITANGENT;
+	return true;
 }
 
 
@@ -565,4 +575,7 @@ bool MeshVertex::operator<(const MeshVertex &o) const
 	return  false;
 }
 
+
+std::string MeshOPS::m_errmsg = "";
+ErrorCode MeshOPS::m_errcde=NO_ERROR;
 }

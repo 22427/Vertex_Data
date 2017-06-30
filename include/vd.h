@@ -122,7 +122,7 @@ public:
 	Type(const TypeID id = INVALID):id(id){}
 	Type(const unsigned int id)	:id(static_cast<TypeID>(id)){}
 	Type(const int id)	:id(static_cast<TypeID>(id)){}
-	Type(const std::string& str);
+	Type(std::string str);
 
 	operator TypeID() const {return  id;}
 	operator unsigned int() const {	return  static_cast<unsigned int>(id);}
@@ -233,13 +233,13 @@ public:
 		offset = 0;
 		normalized = false;
 		use_constant = false;
-		memset(constant,0,4*sizeof(uint64_t));
+		memset(constant,0,4*sizeof(float));
 	}
 
 	Attribute(const AttributeID id,
-			  const uint16_t elements,
-			  const Type type,
-			  const bool normalized,
+			  const uint16_t elements =0,
+			  const Type type = FLOAT,
+			  const bool normalized= false,
 			  bool use_constant = false,
 			  const void* constant = nullptr);
 
@@ -334,9 +334,16 @@ public:
 
 	VertexConfiguration()
 	{
+		clear();
+	}
+
+	void clear()
+	{
 		m_size=0;
 		for(uint32_t i = 0 ; i< AID_COUNT;i++)
-			attributes[i].attribute_id=static_cast<AttributeID>(i);
+		{
+			attributes[i]= Attribute(static_cast<AttributeID>(i));
+		}
 		active_mask=0;
 	}
 
@@ -549,6 +556,8 @@ public:
 
 class DLL_PUBLIC VertexDataOPS
 {
+	static std::string m_errmsg;
+	static ErrorCode m_errcde;
 public:
 	/**
 	 * @brief read reads VertexData from a given stream.
@@ -594,6 +603,19 @@ public:
 	 * @param m
 	 */
 	static void to_mesh(const VertexData &vd, Mesh& m);
+
+	/**
+	 * @brief read_error_code accessing the last error code. Will be resetted
+	 * after this access.
+	 * @return
+	 */
+	static ErrorCode read_error_code()
+	{ErrorCode r = m_errcde;m_errcde=NO_ERROR;return r;}
+	/**
+	 * @brief error_msg acessing the last error message.
+	 * @return
+	 */
+	static const std::string& error_msg(){return m_errmsg;}
 };
 
 
