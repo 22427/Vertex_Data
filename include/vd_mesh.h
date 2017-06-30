@@ -152,6 +152,7 @@ public:
 	static bool read(Mesh& m, const std::string& path);
 	static bool read_OBJP(Mesh& m, std::ifstream& f);
 	static bool read_OFF(Mesh& m, std::ifstream& f);
+	static bool read_PLY(Mesh& m, std::ifstream& f);
 
 	/**
 	 * @brief read will save a mesh to a file. The file extension will

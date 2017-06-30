@@ -87,6 +87,8 @@ bool MeshOPS::read(Mesh& m, const std::string& path)
 	}
 	else if(ext == "OFF")
 		return MeshOPS::read_OFF(m,f);
+	else if(ext == "PLY")
+		return MeshOPS::read_PLY(m,f);
 	else if(ext=="OBJ" || ext == "OBJP" || ext == "OBJ+")
 		return MeshOPS::read_OBJP(m,f);
 	return false;
@@ -163,6 +165,199 @@ bool MeshOPS::read_OFF(Mesh &m, std::ifstream &f)
 	return true;
 }
 
+//   PLY-Loader
+//------------------------------------------------------------------------------
+
+struct ply_prop
+{
+	int elements;
+	AttributeID id;
+	std::string type;
+};
+
+bool MeshOPS::read_PLY(Mesh &m, std::ifstream &f)
+{
+
+	std::string line;
+	m.active_mask = 0;
+	for(int a = 0 ; a< AID_COUNT;a++)m.attribute_data[a].clear();
+	m.triangles.clear();
+
+	std::getline(f,line);
+	trim(line);
+	if(line != "ply")
+	{
+		m_errcde = PARSING_FILE;
+		m_errmsg = "PLY files should start with 'ply'";
+		return false;
+	}
+
+	int num_verts;
+	int num_faces;
+	std::vector<ply_prop> props;
+	int reading = 0; // 1 is verts 2 is faces
+	// read header
+	while (std::getline(f,line))
+	{
+		std::stringstream ls(line);
+		auto first_word = read_word(ls);
+		if(first_word == "comment")
+			continue;
+		if(first_word == "format")
+		{
+			if(read_word(ls) != "ascii")
+			{
+				m_errcde = PARSING_FILE;
+				m_errmsg = "Only PLY ASCII is supported!";
+				return false;
+			}
+			continue;
+		}
+		if(first_word == "element")
+		{
+			const auto ename = read_word(ls);
+			if(ename == "vertex")
+			{
+				ls>>num_verts;
+				reading = 1;
+			}
+			else if(ename == "face")
+			{
+				ls>>num_faces;
+				reading = 2;
+			}
+			else
+			{
+				m_errcde = PARSING_FILE;
+				m_errmsg = "element should be vertex or face not '"+ename+"'";
+				return false;
+			}
+			continue;
+		}
+		if(first_word == "property" && reading == 1)
+		{
+			auto type = read_word(ls);
+			auto name = read_word(ls);
+
+			AttributeID attrib;
+			switch (name[0])
+			{
+				case 'x':case'y':case'z':attrib = AID_POSITION; break;
+				case 'n':attrib = AID_NORMAL;break;
+				case 's':case 't': attrib = AID_TEXCOORD;break;
+				case 'r':case 'g':case 'b': attrib = AID_COLOR;break;
+			}
+			if(props.empty() || props.back().id != attrib)
+			{
+				ply_prop p;
+				p.elements = 1;
+				p.id = attrib;
+				p.type = type;
+				props.push_back(p);
+				m.active_mask |= (1<<attrib);
+				m.attribute_data[attrib].reserve(num_verts);
+			}
+			else
+			{
+				props.back().elements++;
+				props.back().type = type;
+			}
+		}
+		if(first_word == "end_header")
+			break;
+	}
+	// read vertex data
+	for(int i =0 ; i<num_verts;i++)
+	{
+		if(!std::getline(f,line))
+		{
+			m_errcde = PARSING_FILE;
+			m_errmsg = "Not enough vertices to read.";
+			return false;
+		}
+
+		std::stringstream ls(line);
+		for(auto& p : props)
+		{
+			vec4 v(0,0,0,0);
+			for(int  j = 0 ; j <p.elements;j++)
+				ls >>v[j];
+
+			float scale = 1.0f;
+			if(p.type == "float")
+			{}
+			else if(p.type == "uchar")
+			{
+				scale/=static_cast<float>(std::numeric_limits<uint8_t>::max());
+			}
+			else if(p.type == "char")
+			{
+				scale/=static_cast<float>(std::numeric_limits<int8_t>::max());
+			}
+			else if(p.type == "short")
+			{
+				scale/=static_cast<float>(std::numeric_limits<int16_t>::max());
+			}
+			else if(p.type == "ushort")
+			{
+				scale/=static_cast<float>(std::numeric_limits<uint16_t>::max());
+			}
+			else if(p.type == "int")
+			{
+				scale/=static_cast<float>(std::numeric_limits<int32_t>::max());
+			}
+			else if(p.type == "uint")
+			{
+				scale/=static_cast<float>(std::numeric_limits<uint32_t>::max());
+			}
+			v*=scale;
+			if(p.id == AID_COLOR || p.id==AID_POSITION)
+				v.w = 1.0f;
+			m.attribute_data[p.id].push_back(v);
+		}
+	}
+	// read face data
+	m.triangles.reserve(num_faces);
+	for(int i =0 ; i<num_faces;i++)
+	{
+		if(!std::getline(f,line))
+		{
+			m_errcde = PARSING_FILE;
+			m_errmsg = "Not enough faces to read.";
+			return false;
+		}
+
+		std::stringstream ls(line);
+		int nv;
+		ls >> nv;
+		if(nv != 3)
+		{
+			m_errcde = NOT_SUPPORTED;
+			m_errmsg = "Only triangle meshes are supported!";
+			return false;
+		}
+
+		int q[3];
+		ls>>q[0]>>q[1]>>q[2];
+		Triangle t;
+		for(int v =0 ; v<3;v++)
+		{
+			for(int a = 0; a<AID_COUNT;a++)
+			{
+				if(m.active_mask & (1<<a))
+				{
+					t[v].att_id[a] = q[v];
+					t[v].active_mask=m.active_mask;
+				}
+			}
+		}
+		m.triangles.push_back(t);
+	}
+
+	m = MeshOPS::remove_double_attributes(m);
+	return true;
+}
+
 //   OBJP-Loader
 //------------------------------------------------------------------------------
 
@@ -177,8 +372,8 @@ bool MeshOPS::read_OBJP(Mesh &m, std::ifstream &f)
 	while (std::getline(f,line))
 	{
 		auto first_hash = line.find_first_of('#');
-		if(line[first_hash+1]=='+')
-			line[first_hash]='+';
+		if(line[first_hash+1]=='~')
+			line[first_hash]='~';
 		line = line.substr(0,line.find_first_of('#')-1);
 		trim(line);
 		if(line.empty()) continue;
@@ -191,9 +386,9 @@ bool MeshOPS::read_OBJP(Mesh &m, std::ifstream &f)
 		if(lt == "v")		attr_id = 0;
 		else if(lt == "vt")	attr_id = 1;
 		else if(lt == "vn")	attr_id = 2;
-		else if(lt == "++vc")attr_id = 3;
-		else if(lt == "++vtn")attr_id = 4;
-		else if(lt == "++vbtn")attr_id = 5;
+		else if(lt == "~~vc")attr_id = 3;
+		else if(lt == "~~vtn")attr_id = 4;
+		else if(lt == "~~vbtn")attr_id = 5;
 		if(attr_id >=0)
 		{
 			if(attr_id != AID_POSITION || AID_COLOR)
@@ -212,7 +407,7 @@ bool MeshOPS::read_OBJP(Mesh &m, std::ifstream &f)
 			Triangle t;
 			for( uint32_t v = 0; v < 3; v++)
 			{
-				for(int a =0 ; a<=std::min(max_attr,3);a++)
+				for(int a =0 ; a<std::min(max_attr+1,3);a++)
 				{
 					if(m.active_mask & (1<<a))
 					{
@@ -223,10 +418,15 @@ bool MeshOPS::read_OBJP(Mesh &m, std::ifstream &f)
 					if(a!= max_attr && a!= 2)
 						while(c != '/') line_str>>c;
 				}
-
-				if(max_attr>3)
-					read_word(line_str);
-
+				t[v].active_mask = m.active_mask ;
+			}
+			m.triangles.push_back(t);
+		}
+		else if(lt == "~~f")
+		{
+			Triangle& t = m.triangles.back();
+			for( uint32_t v = 0; v < 3; v++)
+			{
 				for(int a =3 ; a<=max_attr;a++)
 				{
 					if(m.active_mask & (1<<a))
@@ -238,12 +438,8 @@ bool MeshOPS::read_OBJP(Mesh &m, std::ifstream &f)
 					if(a!= max_attr)
 						while(c != '/') line_str>>c;
 				}
-
-
 				t[v].active_mask = m.active_mask ;
 			}
-
-			m.triangles.push_back(t);
 		}
 	}
 	return true;
@@ -316,22 +512,24 @@ void write_OBJp(const Mesh&m, uint32_t active_mask, std::ofstream& f);
 bool MeshOPS::write_OBJP(const Mesh &m, std::ofstream &f)
 {
 	f<<"# OBJ+ extends OBJ, there are now six attributes\n";
-	f<<"# in order make it OBJ compatible '#+' does not indicate a comment "
+	f<<"# in order make it OBJ compatible '#~' does not indicate a comment "
 	   "anymore\n";
 	f<<"# v  - vertex position\n";
 	f<<"# vn - vertex normal\n";
 	f<<"# vt - vertex textrue coord\n";
-	f<<"# #+vc - vertex color\n";
-	f<<"# #+vtn - vertex tangent\n";
-	f<<"# #+vbtn - vertex bitangent\n";
+	f<<"# #~vc - vertex color\n";
+	f<<"# #~vtn - vertex tangent\n";
+	f<<"# #~vbtn - vertex bitangent\n";
 	f<<"# a face consists of up to 6 indices, the usual 3 obj indices,\n";
-	f<<"# followed by the new obj+ indices, introduced by #+ \n";
+	f<<"# followed by the new obj+ indices, introduced by #~ \n";
 	f<<"# Example:\n";
-	f<<"# f 1/2/3 2/3/3 3/4/3 #+ 1 2 3 # with normals,texcoords & colors\n";
-	f<<"# f 1 2 3 #+ 3 7 2             # with colors\n";
-	f<<"# f 1 2 3 #+ 3/2 7/4 2/12      # with colors & tangents\n\n";
+	f<<"# \tf 1/2/3 2/3/3 3/4/3 #~ 1 2 3 # with normals,texcoords & colors\n";
+	f<<"# \tf 1 2 3 #~f 3 7 2             # with colors\n";
+	f<<"# \tf 1 2 3 #~f 3/2 7/4 2/12      # with colors & tangents\n\n";
 	f<<"# Note any .obj is an .obj+, and the other way arround if\n";
-	f<<"# and _ONLY_ if there are no commends '#+ ...' in the .obj-file\n";
+	f<<"# and _ONLY_ if there are no commends '#~ ...' in the .obj-file\n";
+	f<<"# But why in the name of everything holy would your write ~ in an obj?"
+	   "\n\n";
 
 	write_OBJp(m,m.active_mask,f);
 	return true;
@@ -343,9 +541,9 @@ void write_OBJp(const Mesh&m, uint32_t active_mask, std::ofstream& f)
 		std::string("v"),
 		std::string("vt"),
 		std::string("vn"),
-		std::string("#+vc"),
-		std::string("#+vtn"),
-		std::string("#+vbtn")};
+		std::string("#~vc"),
+		std::string("#~vtn"),
+		std::string("#~vbtn")};
 
 	int max_active =0 ;
 	for(int a =0 ; a< AID_COUNT;a++)
@@ -379,7 +577,7 @@ void write_OBJp(const Mesh&m, uint32_t active_mask, std::ofstream& f)
 			}
 		}
 		if(max_active > 2)
-		f<<" #+ ";
+		f<<"\n#~f ";
 		for(int v = 0 ; v< 3; v++)
 		{
 			f<<" ";
@@ -537,19 +735,31 @@ Mesh MeshOPS::remove_double_attributes(const Mesh &m)
 {
 	Mesh r;
 	std::map<vec4,uint32_t,std::less<vec4> > attribute_id[AID_COUNT];
+	Triangle proto_tri;
+	for(auto&v:proto_tri)
+		v.active_mask = m.active_mask;
+	r.active_mask = m.active_mask;
 
+	r.triangles.resize(m.triangles.size(),proto_tri);
 	for(uint32_t a = 0 ; a < AID_COUNT; a++)
 	{
 		if(!(m.active_mask & (1<<a)))
 			continue;
-		const auto& iad = m.attribute_data[a];
-		auto oad = r.attribute_data[a];
-		auto& aid = attribute_id[a];
-		for(auto t:m.triangles)
+
+
+		const auto& ia_array = m.attribute_data[a];
+		auto& oa_array = r.attribute_data[a];
+		auto& attrib_map = attribute_id[a];
+
+		for(uint t = 0 ; t<m.triangles.size();t++)
 		{
-			for(auto& v  : t)
+			for(int v = 0 ; v<3;v++)
 			{
-				v.att_id[a] = insert_attrib_value(iad[v.att_id[a]],aid,oad);
+				int aeid= m.triangles[t][v].att_id[a];
+				r.triangles[t][v].att_id[a] = insert_attrib_value(
+							ia_array[aeid],
+						attrib_map,
+						oa_array);
 			}
 		}
 	}
