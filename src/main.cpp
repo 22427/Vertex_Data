@@ -1,4 +1,5 @@
 #ifndef BUILDING_DLL
+#ifdef BUILD_VD_TOOL
 #include <cstdio>
 #include <cstdint>
 #include <algorithm>
@@ -9,7 +10,7 @@
 
 #include <glm/glm.hpp>
 #include <vd_mesh.h>
-#include "include/vd.h"
+#include "../include/vd.h"
 
 using namespace  vd;
 
@@ -161,4 +162,5 @@ int main(int argc, char ** argv)
 	return  0;
 }
 
+#endif // BUILD_VD_TOOL
 #endif
